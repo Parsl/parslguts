@@ -19,9 +19,15 @@ Deliberately nothing fancy there: this is getting-started levels of Parsl use.
 
 Now lets pick apart what happens. I'm going to ignore: the startup/shutdown process (what happens with parsl.load() and what happens at the end of the with block), and I'm going to defer batch system interactions to another section (TODO: hyperlink blocks)
 
+a decorated app
+===============
+
 first lets look at what we defined when we defined our app. Normally `def` defines a function (or a method) in Python. With the python_app decorator, instead that defines a PythonApp object. That's something we can invoke, like a function, but it's going to do something parsl specific.
 
-look at definition of python app and see the ``__call__`` definition. when you invoke an app myapp(5,6), then the relevant ``PythonApp.__call__`` method is invoked.
+look at definition of python app and see the ``__call__`` definition. when you invoke an app myapp(5,6), then the relevant ``PythonApp.__call__`` method is invoked. the decorator stashed away the actual user defined body of code in an attribute, and it can pass that into ``__call``
+
+the data flow kernel
+====================
 
 we can have a look at that method and see that to "invoke an app", we call a method on the DataFlowKernel (DFK), the core object for a workflow (historically following the `God-object antipattern <https://en.wikipedia.org/wiki/God_object>`_).
 
@@ -55,7 +61,39 @@ we're going to:
 * do a bit of book keeping
 * create and return an executor future back to the invoking DFK - this is how we're going to signal to the DFK that the task is completed (with a result or failure) so it is part of the propagation route of results all the way back to the user.
 
+the interchange
+===============
+
 The interchange matches up tasks with available workers: it has a queue of tasks, and it has a queue of process worker pool managers which are ready for work. so whenever a new task arrives from the user workflow process, or when a manager is ready for work, a match is made. there won't always be available work or available workers so there are queues in the interchange.
 
 the matching process so far has been fairly arbitrary but we have been doing some research on better ways to match workers and tasks. (TODO: what link here? if more stuff merged into Parsl, then the PR can be linkable. otherwise later on maybe a SuperComputing 2024 publication - but still unknown)
 
+so now, the interchange sends the task over one of those two zmq-over-TCP connections I talked about earlier... and we're now on the worker node where we're going to run the task.
+
+the process worker pool
+=======================
+
+Generally, a copy of the process worker pool runs on each worker node. (other configurations are possible) and consists of a few closely linked processes:
+
+the manager process which interfaces to the interchange (this is why you'll see a jumble of references to managers or worker pools in the code: the manager is the externally facing interface to the worker pool)
+
+worker processes - each worker process is a worker. there are a bunch of configuration parameters and algorithms to decide how many workers to run - this happens near the start of the process worker pool process in the manager code. (TODO: link to worker pool code that calculates number of workers)
+
+the task arrives at the manager, and the manager dispatches it to a free worker. it is possible there isnt' a free worker, becuase of the preloading feature for high throughput (TODO link to docstring) - and the task will have to wait in another queue here - but that is a rarely used feature.
+
+the worker then deserialises the byte package that was originally serialized all the way back in the user submit process: we've got python objects for the function to run, the positional arguments and the keyword arguments.
+
+so at this point, we invoke the function with those arguments (link to the ``f(*args, **kwargs)`` line)
+
+and the user code runs!
+
+it's probably going to end in two ways: a result or an exception
+(actually there is a common third way, which is that it kills the unix-level worker process for example by using far too much memory or by a library segfault - or by the batch job containing the worker pool reaching the end of its run time - that is handled, but we're ignoring that here)
+
+now we've got the task outcome - either a Python object that is the result, or a Python object that is the exception. We pickle that object and send it back to the manager, then to the interchange (over the *other* ZMQ-over-TCP socket) and then to the high throughput excecutor submit-side in the user workflow process.
+
+Back on the submit side, there's a high throughput executor process running listening on that socket. It gets the result package and sets the result into the executor future (TODO code reference). That is the mechanism by which the DFK sees that the executor has finished its work, and so that's where the final bit of "task elaboration" (TODO: link to elaboration chapter) happens - the big elaboration here would be retries on failure, which is basically do that whole HTEX submission again and get a new executor future for the next try. (but other less common elaborations would be storing checkpointing info for this task, and file staging)
+
+When that elaboration is finished (and didn't do a retry), we can set that same result value into the AppFuture which all that long time ago was given to the user. And so now future.result() returns that results (or raises that exception), back in the user workflow, and we're done.
+
+TODO: label the various TaskRecord state transitions (there are only a few relevant here) throughout this doc - it will play nicely with the monitoring DB chapter later, to they are reflected not only in the log but also in the monitoring database.
