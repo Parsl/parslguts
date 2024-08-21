@@ -1,6 +1,25 @@
 Serializing tasks with Pickle and dill
 ######################################
 
-with an emphasis on the common parsl problems: (un)installed packages, functions and exceptions
+TODO: an emphasis on the common parsl problems: (un)installed packages, functions and exceptions
 
 intro should refer to not regarding this as magic, despite most people desperately hoping it is magic and then not trying to understand whats happening. this is needs a bit of programming language thinking, way more than routing "tasks as quasi-commandlines"
+
+I'll use the term pickling and serializing fairly interchangeably: serialization is the general word for turning something like an object (or graph of objects) into a stream of bytes. Pickling is a more specific form, using Python's built in `pickle` library (TODO: hyperlink pickle).
+
+As I mentioned in an earlier section, (TODO: backlink hyperlink?) when htex wants to send a function invocation to a worker, it serializes the function and its arguments into a byte stream, and routes that to a worker; and serializes the result to send it back along a similar path.
+
+That serialization is actually mostly pluggable, but basically everyone uses some variant of pickle (most often the dill library) because that's the default and there isn't much reason to change.
+
+For most things that look like simple data structures, pickling is pretty simple. For example, almost anything that you can imagine some obvious representation in JSON, plain pickle won't have a problem.
+
+There are a few areas where it helps to have some deeper understanding of whats going on, so that you don't run into "mystery pickling errors because the magic is broken."
+
+TODO: review my pickle talk, figure out what is relevant or not. maybe don't need to talk about pickle VM opcodes, just the remote-execution facility at a higher level? and the import facility at a higher level? no need to talk about recursive objects - that's not a user facing problem (unless you're trying to build your own pickle scheme)
+
+More info
+=========
+
+I've talked about Pickle in more depth and outside of the Parsl context at PyCon Lithuania (TODO: link slides and video)
+
+Proxystore - reference its use in Parsl, and reference a citation for just proxystore. TODO
