@@ -7,5 +7,5 @@ Rendered with sphinx
 
 Edited with ``vi`` and vscode
 
-This text was prepared against Parsl version 2024.08.19
+This text was prepared against Parsl version 2024.09.02
 
