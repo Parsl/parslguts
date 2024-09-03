@@ -34,6 +34,7 @@ we can have a look at that method and see that to "invoke an app", we call a met
 inside the DFK:
 
 * create a task record and an AppFuture, and return that AppFuture to the user
+* (TODO: hyperlink to TaskRecord and describe it a bit more)
 
 Then asynchronously:
 
@@ -94,6 +95,8 @@ now we've got the task outcome - either a Python object that is the result, or a
 
 Back on the submit side, there's a high throughput executor process running listening on that socket. It gets the result package and sets the result into the executor future (TODO code reference). That is the mechanism by which the DFK sees that the executor has finished its work, and so that's where the final bit of "task elaboration" (TODO: link to elaboration chapter) happens - the big elaboration here would be retries on failure, which is basically do that whole HTEX submission again and get a new executor future for the next try. (but other less common elaborations would be storing checkpointing info for this task, and file staging)
 
-When that elaboration is finished (and didn't do a retry), we can set that same result value into the AppFuture which all that long time ago was given to the user. And so now future.result() returns that results (or raises that exception), back in the user workflow, and we're done.
+When that elaboration is finished (and didn't do a retry), we can set that same result value into the AppFuture which all that long time ago was given to the user. And so now future.result() returns that results (or raises that exception), back in the user workflow, and the user can see the result.
+
+So now we're at the end of our simple workflow, and we pass out of the parsl context manager. that causes parsl to do various bits of shutdown. and then the user workflow process falls of the bottom and ends.
 
 TODO: label the various TaskRecord state transitions (there are only a few relevant here) throughout this doc - it will play nicely with the monitoring DB chapter later, to they are reflected not only in the log but also in the monitoring database.

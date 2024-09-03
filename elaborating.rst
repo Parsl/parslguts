@@ -3,5 +3,6 @@ Elaborating tasks
 
 stuff that the DFK does to a task that isn't "just run this task"
 
+this section, i'm briefly going to talk about a few of these things that might seem quite different features, but from the perspective of the DFK they all have some "fiddle with the task the user submitted" feel - enough so that one way forwards is to abstract the internal architecture so they all look more similar to the DFK.
 
-dependencies, retries, checkpointing, file staging, join_app joining, monitoring resource wrapper
+dependencies (including rich dependency resolving), retries, checkpointing, file staging, join_app joining, monitoring resource wrapper

@@ -15,6 +15,17 @@ For most things that look like simple data structures, pickling is pretty simple
 
 There are a few areas where it helps to have some deeper understanding of whats going on, so that you don't run into "mystery pickling errors because the magic is broken."
 
+Functions
+=========
+
+you've probably got some notion of what it means to send a function across the network. and those preconceptions are almost definitely not how pickle, dill and parsl do it. So you need to put those preconceptions aside.
+
+Exceptions
+==========
+
+the big deal here is with trying to have custom data types, only having them on the remote side, but then not realising that an exception being raised is also a custom data type.
+
+
 TODO: review my pickle talk, figure out what is relevant or not. maybe don't need to talk about pickle VM opcodes, just the remote-execution facility at a higher level? and the import facility at a higher level? no need to talk about recursive objects - that's not a user facing problem (unless you're trying to build your own pickle scheme)
 
 More info
@@ -23,3 +34,5 @@ More info
 I've talked about Pickle in more depth and outside of the Parsl context at PyCon Lithuania (TODO: link slides and video)
 
 Proxystore - reference its use in Parsl, and reference a citation for just proxystore. TODO
+
+Serialising functions is a hard part of programming languages, especially in a language that wasn't designed for this, and parsl is constantly pushing up against those limits. have a look at https://www.unison-lang.org/ if you're interested in languages which are trying to do this from the start.
