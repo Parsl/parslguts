@@ -1,25 +1,37 @@
 A sample task execution path
 ############################
 
-the codepath of a task from invoking an app to running on an HTEX worker, and back again
+In this section, I'll walk through the code path of a single Parsl task from invoking an app to running on an HighThroughputExecutor worker, and then sending the result back.
 
-this assumes a basic hpc-like environment. so lets have a sample configuration involving htex and the slurm provider and not much else.
+Here's a simple workflow that you can run on a single computer. I'll point out as we go which bits would run on a worker node when running on an HPC system - but otherwise, as far as this section is concerned there isn't much difference between a single node and multiple node workflow run.
 
-TODO: sample configuration, as defaulting as possible:
+.. code-block:: python
 
-here's an app that adds two numbers
+  import parsl
 
-TODO: app definition
+  def fresh_config():
+    return parsl.Config(
+      executors=[parsl.HighThroughputExecutor()],
+    )
 
-and now we can initialise a Parsl context manager, invoke the app and wait for its result.
+  @parsl.python_app
+  def add(x: int, y: int) -> int:
+    return x+y
 
-TODO: with/invoke code blocks
+  with parsl.load(fresh_config()):
+    print(add(5,3).result())
 
-Deliberately nothing fancy there: this is getting-started levels of Parsl use.
+This is deliberately nothing fancy: there's a config in my preferred style, with almost every parameter getting a suitable default value. All that is changed is to use the HighThroughputExecutor, which is much more interesting than the default ThreadPoolExecutor; there is a single almost trivial app definition; and the code invokes it once, without any novelties like dependencies.
 
-Now lets pick apart what happens. I'm going to ignore: the startup/shutdown process (what happens with parsl.load() and what happens at the end of the with block), and I'm going to defer batch system interactions to another section (TODO: hyperlink blocks)
+Now I will pick apart what happens in that expression near the end where app execution actually happens:
 
-a decorated app
+.. code-block:: python
+
+  add(5,3).result()
+
+I'm going to ignore quite a lot, though: the startup/shutdown process (for example, what happens with parsl.load() and what happens at the end of the with block), and I'm going to defer batch system interactions to another section (TODO: hyperlink blocks)
+
+A decorated app
 ===============
 
 first lets look at what we defined when we defined our app. Normally `def` defines a function (or a method) in Python. With the python_app decorator, instead that defines a PythonApp object. That's something we can invoke, like a function, but it's going to do something parsl specific.
