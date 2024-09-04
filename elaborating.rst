@@ -13,3 +13,5 @@ themes:
 * file staging
 * join_app joining
 * monitoring resource wrapper
+
+TODO: mention bash_apps which are a similar elaboration, but happen inside the bash_app decorator: beyond the decorator, no part of Parsl has any notion of a "bash app"

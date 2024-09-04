@@ -79,6 +79,8 @@ TODO: some different syntax highlighting/background to indicate this is from Par
 
 So what the decorator has mostly done is overload Python function syntax, so that it can be used to submit tasks to the Data Flow Kernel, which handles most of the interesting stuff to do with a task.
 
+The three important parameters here are ``func`` - the underlying function that we want to execute, ``app_args`` - a list of positional arguments to be passed to that function, and ``app_kwargs`` - a dict of keyword arguments to be passed to that function. We'll be moving these three structures around all over the place (and sometimes changing them) until the task is eventually executed.
+
 The Data Flow Kernel
 ====================
 
@@ -91,11 +93,18 @@ inside the DFK:
 
 Then asynchronously:
 
-* perform "elaborations" - see elaborations chapter
+* perform "elaborations" - see elaborations chapter, but this is stuff like waiting for dependencies, and hooking in file staging
 * send the task to an Executor (TODO:hyperlink class docstring). in this case we aren't specifying multiple executors, so the task will go to the default single executor which is an instance of the High Throughput Executor (TODO: hyperlink class docstring) - which generates an executor level future
 * wait for completion of execution (success or failure) signlled via the executor level future
 * a bit more post-execution elaboration
 * set the AppFuture result
+
+dflow.py, where the data flow kernel lives, is the longest source file in the Parsl codebase, but most of what it does will be covered later on. For this example workflow, pretty much it sends the task straight on to the configured HighThroughputExecutor.
+
+This is a callback driven state machine, which can be a bit hard to follow, especially when taking into account the various elaborations that happen.
+
+HighThroughputExecutor.submit
+=============================
 
 so now lets dig into the high throughput executor. the dataflow kernel hands over control to whichever executor the user configured (the other options are commonly the thread pool executor (link) and work queue (link) although there are a few others included). but for this example we're going to concentrate on the high throughput executor. If you're a globus compute fan, this is the layer at which the globus compute endpoint attaches to the guts of parsl - so everything before this isn't relevant for globus compute, but this bit about the high throughput executor is.
 
@@ -105,17 +114,18 @@ htex consists of a small part that runs in the user workflow process (TODO: do I
 
 The first process in the interchange (TODO: link to source code). This runs on the same host as the user workflow process and offloads task and result routing.
 
-Beyond that, on each worker node on our HPC system, a copy of the process worker pool will be running. These worker pools connect back to the interchange using two network connections (ZMQ over TCP) - so on the interchange process you'll need 2 fds per node - this is a common limitation to "number of nodes" scalability of Parsl. (see `issue #3022 <https://github.com/Parsl/parsl/issues/3022>`_ for a proposal to use one network connection per worker pool)
+Beyond that, on each worker node on our HPC system, a copy of the process worker pool will be running. In this example workflow, our local system is the only worker node, so we should only expect to see one process worker pool, on the local system.
+
+These worker pools connect back to the interchange using two network connections (ZMQ over TCP) - so on the interchange process you'll need 2 fds per node - this is a common limitation to "number of nodes" scalability of Parsl. (see `issue #3022 <https://github.com/Parsl/parsl/issues/3022>`_ for a proposal to use one network connection per worker pool)
 
 so inside htex.submit:
 we're going to:
 
-* serialize the details of the function invocation into a sequence of bytes. this is non-trivial even though everyone likes to believe it is magic and simple. In a later chapter I'll talk about this in much more depth (TODO: link pickle)
+* serialize the details of the function invocation (the function, the positional args and the keyword args) into a sequence of bytes. this is non-trivial even though everyone likes to believe it is magic and simple. In a later chapter I'll talk about this in much more depth (TODO: link pickle)
 * send that byte sequence to the interchange over ZMQ
-* do a bit of book keeping
 * create and return an executor future back to the invoking DFK - this is how we're going to signal to the DFK that the task is completed (with a result or failure) so it is part of the propagation route of results all the way back to the user.
 
-the interchange
+The Interchange
 ===============
 
 The interchange matches up tasks with available workers: it has a queue of tasks, and it has a queue of process worker pool managers which are ready for work. so whenever a new task arrives from the user workflow process, or when a manager is ready for work, a match is made. there won't always be available work or available workers so there are queues in the interchange.
@@ -124,7 +134,7 @@ the matching process so far has been fairly arbitrary but we have been doing som
 
 so now, the interchange sends the task over one of those two zmq-over-TCP connections I talked about earlier... and we're now on the worker node where we're going to run the task.
 
-the process worker pool
+The Process Worker Pool
 =======================
 
 Generally, a copy of the process worker pool runs on each worker node. (other configurations are possible) and consists of a few closely linked processes:
@@ -139,12 +149,12 @@ the worker then deserialises the byte package that was originally serialized all
 
 so at this point, we invoke the function with those arguments (link to the ``f(*args, **kwargs)`` line)
 
-and the user code runs!
+and the user code runs! almost, but not quite, as if all of that hadn't happened and we'd just invoked the underlying function without Parsl.
 
 it's probably going to end in two ways: a result or an exception
-(actually there is a common third way, which is that it kills the unix-level worker process for example by using far too much memory or by a library segfault - or by the batch job containing the worker pool reaching the end of its run time - that is handled, but we're ignoring that here)
+(actually there is a common third way, which is that it kills the unix-level worker process for example by using far too much memory or by a library segfault - or by the batch job containing the worker pool reaching the end of its run time - that is handled, but I'm ignoring that here)
 
-now we've got the task outcome - either a Python object that is the result, or a Python object that is the exception. We pickle that object and send it back to the manager, then to the interchange (over the *other* ZMQ-over-TCP socket) and then to the high throughput excecutor submit-side in the user workflow process.
+now we've got the task outcome - either a Python object that is the result, or a Python object that is the exception. We pickle that object and send it back to the manager, then to the interchange (over the *other* ZMQ-over-TCP socket) and then to the high throughput executor submit-side in the user workflow process.
 
 Back on the submit side, there's a high throughput executor process running listening on that socket. It gets the result package and sets the result into the executor future (TODO code reference). That is the mechanism by which the DFK sees that the executor has finished its work, and so that's where the final bit of "task elaboration" (TODO: link to elaboration chapter) happens - the big elaboration here would be retries on failure, which is basically do that whole HTEX submission again and get a new executor future for the next try. (but other less common elaborations would be storing checkpointing info for this task, and file staging)
 
