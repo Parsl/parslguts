@@ -31,14 +31,55 @@ Now I will pick apart what happens in that expression near the end where app exe
 
 I'm going to ignore quite a lot, though: the startup/shutdown process (for example, what happens with parsl.load() and what happens at the end of the with block), and I'm going to defer batch system interactions to another section (TODO: hyperlink blocks)
 
-A decorated app
-===============
+A ``python_app``
+================
 
-first lets look at what we defined when we defined our app. Normally `def` defines a function (or a method) in Python. With the python_app decorator, instead that defines a PythonApp object. That's something we can invoke, like a function, but it's going to do something parsl specific.
+.. code-block:: python
 
-look at definition of python app and see the ``__call__`` definition. when you invoke an app myapp(5,6), then the relevant ``PythonApp.__call__`` method is invoked. the decorator stashed away the actual user defined body of code in an attribute, and it can pass that into ``__call``
+  @parsl.python_app
+  def add(x: int, y: int) -> int:
+    return x+y
 
-the data flow kernel
+Normally ``def`` defines a function (or a method) in Python. With the ``python_app`` decorator, Parsl gets to change that into something slightly different: a "Python app" which mostly looks like function but with fancy Parsl bits added. The relevant fancy bit for this example is that instead of returning an ``int`` when invoked, ``add`` will instead return a ``Future[int]`` that will some time later get the result of the underlying function.
+
+What happens when making this definition is that Python *does* make a regular function, but instead of binding the name ``add`` to that function, instead it passes it to a decorating function ``parsl.python_app``. That decorating function is allowed to do pretty much anything, but in Parsl it replaces the function definition with a new ``PythonApp`` object, constructed from that underlying regular function (and a few other parameters).
+
+[TODO: link to Python decorator description, perhaps in python docs?]
+
+link to parsl.python_app source code:
+
+https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/app.py#L108
+
+[TODO: link to PythonApp code]
+
+Later on, when the workflow executes this expression:
+
+.. code-block:: python
+
+  add(5,3)
+
+what is being invoked here is the ``add`` ``PythonApp``, not the underlying function that the workflow seemed to be defining.
+
+What does it mean to call an object instead of a function (or method)? What happens is that Python looks on that object for a method called ``__call__`` and invokes that method with all the parameters. Double-underscore methods are the standard way in Python for overriding things. The most common one is probably ``__repr__`` but there are loads of them described throughout https://docs.python.org/3/reference/datamodel.html 
+
+The ``PythonApp`` implementation of ``__call__`` doesn't do too much: it massages arguments a bit but ultimately delegates all the work to the next component along, the Data Flow Kernel. The submit method returns immediately, also without executing anything. It returns a ``Future``, ``app_fut``, which ``PythonApp.__call__`` returns to its own caller.
+
+TODO: some different syntax highlighting/background to indicate this is from Parsl source code?
+
+.. code-block:: python
+
+  app_fut = dfk.submit(func, app_args=args,
+                       executors=self.executors,
+                       cache=self.cache,
+                       ignore_for_cache=self.ignore_for_cache,
+                       app_kwargs=invocation_kwargs,
+                       join=self.join)
+
+  return app_fut
+
+So what the decorator has mostly done is overload Python function syntax, so that it can be used to submit tasks to the Data Flow Kernel, which handles most of the interesting stuff to do with a task.
+
+The Data Flow Kernel
 ====================
 
 we can have a look at that method and see that to "invoke an app", we call a method on the DataFlowKernel (DFK), the core object for a workflow (historically following the `God-object antipattern <https://en.wikipedia.org/wiki/God_object>`_).
