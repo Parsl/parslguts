@@ -21,7 +21,7 @@ Here's a simple workflow that you can run on a single computer. I'll point out a
   with parsl.load(fresh_config()):
     print(add(5,3).result())
 
-This is deliberately nothing fancy: there's a config in my preferred style, with almost every parameter getting a suitable default value. All that is changed is to use the HighThroughputExecutor, which is much more interesting than the default ThreadPoolExecutor; there is a single almost trivial app definition; and the code invokes it once, without any novelties like dependencies.
+This is deliberately nothing fancy: there's a config in my preferred style, with almost every parameter getting a suitable default value. All that is changed is to use the High-Throughput Executor, which is much more interesting than the default Thread Pool Executor; there is a single almost trivial app definition; and the code invokes it once, without any novelties like dependencies.
 
 Now I will pick apart what happens in that expression near the end where app execution actually happens:
 
