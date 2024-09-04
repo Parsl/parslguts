@@ -8,3 +8,5 @@ These are notes for a 3 hour course (6 x 25 minute sessions) for experienced Par
 This text is not intended to be a comprehensive guide to all parts of the Parsl codebase: there is plenty more to learn about. This text is intended to give you a few places to begin exploring.
 
 I'll try to include links to relevant external resources: source code, other Parsl documentation, community talks, github issues, papers and other research work.
+
+You don't need any particular environment to follow along with these notes, but you might like to have a throw-away installation of Parsl 2024.09.02 that you can mess with when you find something interesting.
