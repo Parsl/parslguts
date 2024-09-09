@@ -5,8 +5,8 @@
    introduction
    taskpath
    blocks
-   pickle
    elaborating
    monitoring
+   pickle
    plugins
    colophon
