@@ -39,7 +39,7 @@ https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/par
 
   exec_fu = self.launch_task(task_record)
 
-... and then line 701 will attach a callback (``DataFlowKernel.handle_exec_update``) onto that executor future. This will be called when a result or exception is set on the executor future. Now ``launch_if_ready`` can end: the Data Flow Kernel doesn't have to think about this task any more until it completes - and that end-of-task behaviour lives in ``handle_exec_update``.
+... and then line 701 will attach a callback (``DataFlowKernel.handle_exec_update``) onto that executor future. This will be called when a result or exception is set on the executor future. Now ``_launch_if_ready_async`` can end: the Data Flow Kernel doesn't have to think about this task any more until it completes - and that end-of-task behaviour lives in ``handle_exec_update``.
 
 https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L701
 
@@ -77,7 +77,38 @@ If there isn't enough retry budget left, then line 392 onwards marks the task as
 Checkpointing
 =============
 
-three different names used for overlapping concepts: checkpointing, caching and memoization - there's no real need for using three different terms and I think as part of ongoing work here those terms could merge.
+I just talked about the Data Flow Kernel trying to execute a task many times, rather than the default of just once. Going in the other direction, there are times when Data Flow Kernel can complete a task without trying to execute it at all - namely, when checkpointing is turned on.
+
+.. note::
+  three different names used for overlapping/related concepts: checkpointing, caching and memoization - there's no real need for using three different terms and I think as part of ongoing work here those terms could merge.
+
+Parsl checkpointing does not try to capture and restore the state of a whole Python workflow script. Restarting a checkpointed workflow script will run the whole script from the start, but when the Data Flow Kernel receives a task that has already been run, instead of trying it even once, the result stored in the checkpoint database will be used instead.
+
+The basic outline is:
+
+* when a workflow is started with an existing checkpointing database specified in ``Config.checkpoint_files``, all of the entries in all of those files are loaded in to an in-memory ``dict`` stored in a ``Memoizer``. This happens in ``DataFlowKernel.__init__`` https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L168  
+
+* when a task is ready to run, ``DataFlowKernel._launch_if_ready_async`` calls ``DataFlowKernel.launch_task``. This will usually submit the task to the relevant executor at line 761 https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L761 returning a ``Future`` that will eventually hold the completed result. But a few lines before at line 728 will check the ``Memoizer`` to see if there is a cached result, and if so, return early with a ``Future`` from the ``Memoizer`` contained in the cached result.
+
+  https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L728
+
+  .. code-block:: python
+
+    if memo_fu:
+      logger.info("Reusing cached result for task {}".format(task_id))
+      task_record['from_memo'] = True
+      assert isinstance(memo_fu, Future)
+      return memo_fu
+
+  So the rest of the code still sees an "executor-level" future, but it happens to now come from the ``Memoizer`` rather than from the relevant ``Executor``.
+
+* if a task is actually run by an executor (because it was not available in the existing checkpoint database), then on completion (in ``DataFlowKernel.handle_app_update`` which is another callback, this time run when an AppFuture is completed) ``DataFlowKernel.checkpoint`` will be invoked to store the new result into the ``Memoizer`` and checkpoint database, at line 566 onwards: https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L566
+
+  .. note::
+    ``handle_app_update`` is a bit of a wart: because it runs in a callback associated with the AppFuture presented to a user, the code there won't necessarily run in any particular order wrt user code and so it can present some race conditions. This code could move into end-of-task completion handling elsewhere in the DFK, perhaps.
+
+
+TODO: do I want to talk about how parameters are keyed here? and make a forward reference to `pickle` section?
 
 Modifying the arguments to a task
 ---------------------------------

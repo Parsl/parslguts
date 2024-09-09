@@ -30,6 +30,8 @@ TODO: review my pickle talk, figure out what is relevant or not. maybe don't nee
 
 TODO: also mention cloudpickle as a dill-like pickle extension. They are both installable alongside each other... and people mostly haven't given me decent argumetns for cloudpickle because people don't dig much into understanding whats going on.
 
+TODO: note that checkpointing results are stored using pickle - so this is not only about sending things across the wire (in space) but also to future runs of a checkpointed workflow (in time).
+
 More info
 =========
 
