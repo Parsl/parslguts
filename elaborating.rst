@@ -113,8 +113,48 @@ TODO: do I want to talk about how parameters are keyed here? and make a forward 
 Modifying the arguments to a task
 ---------------------------------
 
-* dependencies (including rich dependency resolving - but that should be an onwards mention of plugin points?)
-* file staging (mention how these are a bit like fancy dependency substition)
+In the previous section I talked about choosing how many times to execute a task. In this section, I'll talk about modifying the task before executing it, driven by certain special kinds of arguments.
+
+Dependencies
+============
+
+Parsl task dependency is mediated by futures: if a task is invoked with some ``Future`` arguments, that task will eventually run when all of those futures have results, with the individual future results substituted in place of the respective ``Future`` arguments.
+
+Earlier on (in the retry section) I talked about how ``DataFlowKernel._launch_if_ready_async`` would return rather than launch a task if ``DataFlowKernel._count_deps`` counted any outstanding futures.
+
+This happens in a few stages:
+
+* as part of ``DataFlowKernel.submit`` (the entry point for all task submissions), ``DataFlowKernel._gather_all_deps`` examines al of the arguments for the task to find ``Future`` objects to depend on. These are then stored into the task record. https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L1078
+
+  .. code-block:: python
+
+    depends = self._gather_all_deps(app_args, app_kwargs)
+    logger.debug("Gathered dependencies")
+    task_record['depends'] = depends
+
+* TODO: in order to get launch if ready to be called when all the futures are done, each future has a callback added which will invoke launch if ready
+
+* inside ``_launch_if_ready_async``, ``DataFlowKernel._count_deps`` loops over the Future objects in ``task_record['depends']`` and counts how many are not done. If there are any not-done futures, ``_launch_if_ready_async`` returns without launching:
+
+  .. code-block:: python
+
+    if self._count_deps(task_record['depends']) != 0:
+      logger.debug(f"Task {task_id} has outstanding dependencies, so launch_if_ready skipping")
+      return
+
+  So ``_launch_if_ready_async`` might run several times, once for every dependency ``Future`` that completes. When the final outstanding future completes, that final invocation of ``_launch_if_ready_async`` will see no outstanding dependencies - the task will be ready in the "launch if ready" sense.
+
+
+(TODO: including rich dependency resolving - but that should be an onwards mention of plugin points? and a note about this being a common mistake. but complicated to implement because it needs to traverse arbitrary structures. which might give a bit of a tie-in to how ``id_for_memo`` works)
+
+
+File staging
+============
+
+file staging (mention how these are a bit like fancy dependency substition)
+
+.. note::
+  Future development: these can look something like "build a sub-workflow that will replace this argument with the result of a sub-workflow" but not quite: file staging for example, has different modes for outputs, and sometimes replaces the task body with a new task body, rather than using a sub-workflow. Perhaps a more general "rewrite a task with different arguments, different dependencies, different body" model?
 
 Wrapping tasks with more Python
 -------------------------------
@@ -126,7 +166,7 @@ Wrapping tasks with more Python
 join_apps (dependencies at the end of a task?)
 --------------------------------------------------------
 
-* join_app joining
+* join_app joining - emphasise this as being quite similar to dependency handling.
 
 
 TODO: mention bash_apps which are a similar elaboration, but happen inside the bash_app decorator: beyond the decorator, no part of Parsl has any notion of a "bash app"
