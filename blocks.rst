@@ -83,7 +83,7 @@ Choosing when to start or end a block
 
 Parsl has some scaling code that starts and ends blocks as the task load presented by a workflow changes.
 
-There are three scaling strategies:
+There are three scaling strategies, which run (by default) every 5 seconds.
 
 The init only strategy, ``none``
 --------------------------------
