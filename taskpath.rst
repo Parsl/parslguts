@@ -46,9 +46,7 @@ What happens when making this definition is that Python *does* make a regular fu
 
 [TODO: link to Python decorator description, perhaps in python docs?]
 
-link to parsl.python_app source code:
-
-https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/app.py#L108
+link to parsl.python_app source code: `parsl/app/app.py line 108 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/app.py#L108>`_
 
 [TODO: link to PythonApp code]
 

@@ -17,7 +17,7 @@ If the user has configured retries, and if try 0 fails (indicated by the executo
 
 Let's have a look at the launch and retry flow in the Parsl source code. The Data Flow Kernel "launches" tasks into an executor using a method ``_launch_if_ready_async``, starting here
 
-https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L645
+`parsl/dataflow/dflow.py line 645 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L645>`_
 
 .. index:: single: launch
 
@@ -33,7 +33,7 @@ A task is ready to launch if it has no incomplete dependencies:
 
 At line 673, the ``launch_task`` method will submit the task to the relevant executor and return the executor future.
 
-https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L673
+`parsl.dataflow.dflow line 673 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L673>`_
 
 .. code-block:: python
 
@@ -41,7 +41,7 @@ https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/par
 
 ... and then line 701 will attach a callback (``DataFlowKernel.handle_exec_update``) onto that executor future. This will be called when a result or exception is set on the executor future. Now ``_launch_if_ready_async`` can end: the Data Flow Kernel doesn't have to think about this task any more until it completes - and that end-of-task behaviour lives in ``handle_exec_update``.
 
-https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L701
+`parsl.dataflow.dflow line 701 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L701>`_
 
 .. code-block:: python
 
@@ -50,7 +50,7 @@ https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/par
 
 ``handle_exec_update`` is defined here
 
-https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L323
+`parsl.dataflow.dflow line 323 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L323>`_
 
 The behaviour is defined in two cases: when the executor future contains a successful result (line 402 onwards https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L402) and when the executor future contains an exception (line 346 onwards https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L346)
 
@@ -62,7 +62,7 @@ In the exception case starting at line 346, the ``fail_cost`` (by default, the c
 
 Line 368 does the default "count each try as costing 1" behaviour, with the 16 lines before that implementing the pluggable ``retry_handler``.
 
-https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L368
+`parsl.dataflow.dflow line 368 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L368>`_
 
 .. code-block:: python
 
