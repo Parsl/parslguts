@@ -63,18 +63,52 @@ In the Task Vine executor, something similar happens at line TODO and line TODO 
 .. note::
      WART: tasks_per_node is always 1 here when called by Parsl. It should perhaps be removed. It's a vestige of an earlier time when Parsl wanted the batch system to start multiple workers on each worker node (for the long-removed IPyParallel executor). More recent executors, the HighThroughputExecutor, the WorkQueue and TaskVine executor and the MPIExecutor choose to manage (in different ways) how work is performed on a particular node rather than asking the batch system for a particular fixed number of workers.
 
-Maybe interesting here is what is missing from the ``submit`` call: there is no mention of batch system queues, no mention of how many nodes to request in this block, no mention of pod image identifiers.
+Maybe interesting here is what is missing from the ``submit`` call: there is no mention of batch system queues, no mention of how many nodes to request in this block, no mention of pod image identifiers. Attributes like that are usually the same for every block submitted through (to/by?) the provider, and usually only make sense in the context of whatever the underlying batch system is: for example, a slurm job might have a queue specification and a kubernetes job might have a persistent volume specification, to be set on all jobs. These are defined in the initializer for each provider, so the provider API doesn't need to know about these specifics at all.
 
 
-* LRM providers
+.. index: launchers
 
-* launchers (not all providers use these, so provider is more "fundamental" - specifically its the providers that fit the HPC supercomputer model, vs eg. kubernetes or the cloud-like providers)
-  note that in some batch systems, the batch script doesnt' run on a worker node but on a separate management node, and anything big/serious should be launched with something like mpiexec or aprun - so that those things run on the allocated worker nodes.
+Launchers
+=========
+
+Some batch systems separate allocation of worker nodes and execution of commands on worker nodes. In non-Parsl contexts that looks like: you write a batch script and submit it to slurm or PBS, and inside that batch script you prefix your application command line with something like ``mpiexec`` or ``srun`` which causes your application to run on all the worker nodes. Without that prefix, the command would run on a single node (sometimes not even in the batch allocation!)
+
+To support this, some providers take a ``launcher`` parameter, which understands how to put that prefix onto the front of the relevant command. They're mostly quite simple.
+
+All of the included launchers live in `parsl.launchers.launchers <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/launchers/launchers.py>`_ and usually consist of shell scripting around something like ``mpiexec`` or ``srun``.
+
 
 Choosing when to start or end a block
 =====================================
 
-* scaling strategies and error handling (two parts of the same feedback loop)
+Parsl has some scaling code that starts and ends blocks as the task load presented by a workflow changes.
+
+There are three scaling strategies:
+
+The init only strategy, ``none``
+--------------------------------
+
+* none, the init only strategy. This strategy only makes use of the ``init_blocks`` configuration parameter. At the start of a workflow, it starts the specified number of blocks. After that it does not try to start any more blocks.
+
+  TODO: is there a bug here that a workflow will then hang if all its blocks run out? (because the workflow will wait for more blocks to appear?)
+
+The ``simple`` strategy
+-----------------------
+
+* simple. This strategy will add more blocks when it sees that there are not enough workers.
+
+  When an executor becomes completely idle for some time, it will cancel all blocks. Even one task on the executor will inhibit cancellation - the history of this is that for abstract block-using executors, there is nothing to identify which blocks (if any) are idle. so scale out and scale in are not symmetric operations in that sense.
+
+  The scaling calculation looks at the number of tasks outstanding and compares it to the number of task slots (worker slots?) that are either running now or queued to be run.
+
+  There is a ``parallelism`` parameter (where?), to allow users to control the ratio of tasks to workers - by default this is 1 so Parsl will try to submit blocks to give as many worker slots as there are tasks. This does not assign tasks to particular workers: so it is common for one block to start up and a lot of the outstanding work to be processed by that block, before a second block starts which is then completely idle.
+
+* htex_auto_scale. Like the simple strategy for scale-out, but with better scale-in behaviour that makes use of some High Throughput Executor features: the high throughput executor knows which blocks are empty, so when there is scale-in pressure, can scale-in empty blocks while leaving non-empty blocks still running. Some prototype work has happened to try to make htex try to make blocks empty faster too, but that has not reached the production codebase.
+
+  TODO: reference block draining problem and matthew's work
+
+
+TODO: error handling (two parts of the same feedback loop)
 
 Worker environments
 ===================
