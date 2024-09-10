@@ -52,11 +52,9 @@ TODO: also mention cloudpickle as a dill-like pickle extension. They are both in
 
 TODO: note that checkpointing results are stored using pickle - so this is not only about sending things across the wire (in space) but also to future runs of a checkpointed workflow (in time).
 
-More info
-=========
+.. seealso::
+  I've talked about Pickle in more depth and outside of the Parsl context at PyCon Lithuania (TODO: link slides and video)
 
-I've talked about Pickle in more depth and outside of the Parsl context at PyCon Lithuania (TODO: link slides and video)
+  Proxystore - reference its use in Parsl, and reference a citation for just proxystore. TODO
 
-Proxystore - reference its use in Parsl, and reference a citation for just proxystore. TODO
-
-Serialising functions is a hard part of programming languages, especially in a language that wasn't designed for this, and parsl is constantly pushing up against those limits. have a look at https://www.unison-lang.org/ if you're interested in languages which are trying to do this from the start.
+  Serialising functions is a hard part of programming languages, especially in a language that wasn't designed for this, and parsl is constantly pushing up against those limits. have a look at https://www.unison-lang.org/ if you're interested in languages which are trying to do this from the start.
