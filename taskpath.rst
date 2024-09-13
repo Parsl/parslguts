@@ -29,7 +29,9 @@ Now I will pick apart what happens in that expression near the end where app exe
 
   add(5,3).result()
 
-I'm going to ignore quite a lot, though: the startup/shutdown process (for example, what happens with parsl.load() and what happens at the end of the with block), and I'm going to defer batch system interactions to another section (TODO: hyperlink blocks)
+I'm going to ignore quite a lot, though: the startup/shutdown process (for example, what happens with parsl.load() and what happens at the end of the with block), and I'm going to defer batch system interactions to another section.
+
+.. todo:: in last paragraph, forward links to other sections
 
 A ``python_app``
 ================
@@ -44,11 +46,11 @@ Normally ``def`` defines a function (or a method) in Python. With the ``python_a
 
 What happens when making this definition is that Python *does* make a regular function, but instead of binding the name ``add`` to that function, instead it passes it to a decorating function ``parsl.python_app``. That decorating function is allowed to do pretty much anything, but in Parsl it replaces the function definition with a new ``PythonApp`` object, constructed from that underlying regular function (and a few other parameters).
 
-[TODO: link to Python decorator description, perhaps in python docs?]
+.. todo:: link to Python decorator description, perhaps in python docs?
 
 link to parsl.python_app source code: `parsl/app/app.py line 108 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/app.py#L108>`_
 
-[TODO: link to PythonApp code]
+.. todo:: link to PythonApp code
 
 Later on, when the workflow executes this expression:
 
@@ -62,7 +64,7 @@ What does it mean to call an object instead of a function (or method)? What happ
 
 The ``PythonApp`` implementation of ``__call__`` doesn't do too much: it massages arguments a bit but ultimately delegates all the work to the next component along, the Data Flow Kernel. The submit method returns immediately, also without executing anything. It returns a ``Future``, ``app_fut``, which ``PythonApp.__call__`` returns to its own caller.
 
-TODO: some different syntax highlighting/background to indicate this is from Parsl source code?
+.. todo:: some different syntax highlighting/background to indicate this is from Parsl source code?
 
 .. code-block:: python
 
@@ -87,12 +89,16 @@ we can have a look at that method and see that to "invoke an app", we call a met
 inside the DFK:
 
 * create a task record and an AppFuture, and return that AppFuture to the user
-* (TODO: hyperlink to TaskRecord and describe it a bit more)
+
+.. todo:: hyperlink to TaskRecord and describe it a bit more
 
 Then asynchronously:
 
 * perform "elaborations" - see elaborations chapter, but this is stuff like waiting for dependencies, and hooking in file staging
 * send the task to an Executor (TODO:hyperlink class docstring). in this case we aren't specifying multiple executors, so the task will go to the default single executor which is an instance of the High Throughput Executor (TODO: hyperlink class docstring) - which generates an executor level future
+
+  .. todo:: hyperlink class docstring
+
 * wait for completion of execution (success or failure) signlled via the executor level future
 * a bit more post-execution elaboration
 * set the AppFuture result
@@ -108,11 +114,17 @@ HighThroughputExecutor.submit
 
 so now lets dig into the high throughput executor. the dataflow kernel hands over control to whichever executor the user configured (the other options are commonly the thread pool executor (link) and work queue (link) although there are a few others included). but for this example we're going to concentrate on the high throughput executor. If you're a globus compute fan, this is the layer at which the globus compute endpoint attaches to the guts of parsl - so everything before this isn't relevant for globus compute, but this bit about the high throughput executor is.
 
-The data flow kernel will have performed some initialization on the high throughput executor when it started up, in addition to the user-specified configuration at construction time - (TODO: perhaps this is in enough of one place to link to in the DFK code?). for now, I'm going to assume that all the parts of the high throughput executor have started up correctly.
+The data flow kernel will have performed some initialization on the high throughput executor when it started up, in addition to the user-specified configuration at construction time. for now, I'm going to assume that all the parts of the high throughput executor have started up correctly.
 
-htex consists of a small part that runs in the user workflow process (TODO: do I need to define that as a process name earlier on in this chapter? it's somethat that should be defined and perhaps there should be a glossary or index for this document for terms like that?) and several other processes.
+.. todo:: perhaps this initialization code is in enough of one place to link to in the DFK code?
 
-The first process in the interchange (TODO: link to source code). This runs on the same host as the user workflow process and offloads task and result routing.
+htex consists of a small part that runs in the user workflow process 
+
+.. todo:: do I need to defined "user workflow process " earlier on in this chapter? it's somethat that should be defined and perhaps there should be a glossary or index for this document for terms like that?) and several other processes. 
+
+The first process in the interchange. This runs on the same host as the user workflow process and offloads task and result routing.
+
+.. todo:: link source code (interchange.py)
 
 Beyond that, on each worker node on our HPC system, a copy of the process worker pool will be running. In this example workflow, our local system is the only worker node, so we should only expect to see one process worker pool, on the local system.
 
@@ -121,7 +133,10 @@ These worker pools connect back to the interchange using two network connections
 so inside htex.submit:
 we're going to:
 
-* serialize the details of the function invocation (the function, the positional args and the keyword args) into a sequence of bytes. this is non-trivial even though everyone likes to believe it is magic and simple. In a later chapter I'll talk about this in much more depth (TODO: link pickle)
+* serialize the details of the function invocation (the function, the positional args and the keyword args) into a sequence of bytes. this is non-trivial even though everyone likes to believe it is magic and simple. In a later chapter I'll talk about this in much more depth
+
+  .. todo:: link pickle, link serialization chapter
+
 * send that byte sequence to the interchange over ZMQ
 * create and return an executor future back to the invoking DFK - this is how we're going to signal to the DFK that the task is completed (with a result or failure) so it is part of the propagation route of results all the way back to the user.
 
@@ -130,7 +145,9 @@ The Interchange
 
 The interchange matches up tasks with available workers: it has a queue of tasks, and it has a queue of process worker pool managers which are ready for work. so whenever a new task arrives from the user workflow process, or when a manager is ready for work, a match is made. there won't always be available work or available workers so there are queues in the interchange.
 
-the matching process so far has been fairly arbitrary but we have been doing some research on better ways to match workers and tasks. (TODO: what link here? if more stuff merged into Parsl, then the PR can be linkable. otherwise later on maybe a SuperComputing 2024 publication - but still unknown)
+the matching process so far has been fairly arbitrary but we have been doing some research on better ways to match workers and tasks.
+
+  .. todo:: what link here? if more stuff merged into Parsl, then the PR can be linkable. otherwise later on maybe a SuperComputing 2024 publication - but still unknown
 
 so now, the interchange sends the task over one of those two zmq-over-TCP connections I talked about earlier... and we're now on the worker node where we're going to run the task.
 
@@ -141,9 +158,13 @@ Generally, a copy of the process worker pool runs on each worker node. (other co
 
 the manager process which interfaces to the interchange (this is why you'll see a jumble of references to managers or worker pools in the code: the manager is the externally facing interface to the worker pool)
 
-worker processes - each worker process is a worker. there are a bunch of configuration parameters and algorithms to decide how many workers to run - this happens near the start of the process worker pool process in the manager code. (TODO: link to worker pool code that calculates number of workers)
+worker processes - each worker process is a worker. there are a bunch of configuration parameters and algorithms to decide how many workers to run - this happens near the start of the process worker pool process in the manager code.
 
-the task arrives at the manager, and the manager dispatches it to a free worker. it is possible there isnt' a free worker, becuase of the preloading feature for high throughput (TODO link to docstring) - and the task will have to wait in another queue here - but that is a rarely used feature.
+.. todo:: link to worker pool code that calculates number of workers
+
+the task arrives at the manager, and the manager dispatches it to a free worker. it is possible there isnt' a free worker, becuase of the preloading feature for high throughput - and the task will have to wait in another queue here - but that is a rarely used feature.
+
+.. todo:: link to docstring of preload parameter
 
 the worker then deserialises the byte package that was originally serialized all the way back in the user submit process: we've got python objects for the function to run, the positional arguments and the keyword arguments.
 
@@ -156,10 +177,14 @@ it's probably going to end in two ways: a result or an exception
 
 now we've got the task outcome - either a Python object that is the result, or a Python object that is the exception. We pickle that object and send it back to the manager, then to the interchange (over the *other* ZMQ-over-TCP socket) and then to the high throughput executor submit-side in the user workflow process.
 
-Back on the submit side, there's a high throughput executor process running listening on that socket. It gets the result package and sets the result into the executor future (TODO code reference). That is the mechanism by which the DFK sees that the executor has finished its work, and so that's where the final bit of "task elaboration" (TODO: link to elaboration chapter) happens - the big elaboration here would be retries on failure, which is basically do that whole HTEX submission again and get a new executor future for the next try. (but other less common elaborations would be storing checkpointing info for this task, and file staging)
+Back on the submit side, there's a high throughput executor process running listening on that socket. It gets the result package and sets the result into the executor future. That is the mechanism by which the DFK sees that the executor has finished its work, and so that's where the final bit of "task elaboration" happens - the big elaboration here would be retries on failure, which is basically do that whole HTEX submission again and get a new executor future for the next try. (but other less common elaborations would be storing checkpointing info for this task, and file staging)
+
+.. todo:: code reference to deserializing and setting executor future result
+
+.. todo:: link to elaboration chapter
 
 When that elaboration is finished (and didn't do a retry), we can set that same result value into the AppFuture which all that long time ago was given to the user. And so now future.result() returns that results (or raises that exception), back in the user workflow, and the user can see the result.
 
 So now we're at the end of our simple workflow, and we pass out of the parsl context manager. that causes parsl to do various bits of shutdown. and then the user workflow process falls of the bottom and ends.
 
-TODO: label the various TaskRecord state transitions (there are only a few relevant here) throughout this doc - it will play nicely with the monitoring DB chapter later, to they are reflected not only in the log but also in the monitoring database.
+.. todo:: label the various TaskRecord state transitions (there are only a few relevant here) throughout this doc - it will play nicely with the monitoring DB chapter later, to they are reflected not only in the log but also in the monitoring database.
