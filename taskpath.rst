@@ -33,6 +33,8 @@ I'm going to ignore quite a lot, though: the startup/shutdown process (for examp
 
 .. todo:: in last paragraph, forward links to other sections
 
+.. index:: python_app, Python apps, decorators
+
 A ``python_app``
 ================
 
@@ -81,12 +83,16 @@ So what the decorator has mostly done is overload Python function syntax, so tha
 
 The three important parameters here are ``func`` - the underlying function that we want to execute, ``app_args`` - a list of positional arguments to be passed to that function, and ``app_kwargs`` - a dict of keyword arguments to be passed to that function. We'll be moving these three structures around all over the place (and sometimes changing them) until the task is eventually executed.
 
+.. index:: DFK, Data Flow Kernel, God object
+
 The Data Flow Kernel
 ====================
 
 we can have a look at that method and see that to "invoke an app", we call a method on the DataFlowKernel (DFK), the core object for a workflow (historically following the `God-object antipattern <https://en.wikipedia.org/wiki/God_object>`_).
 
 inside the DFK:
+
+.. index:: TaskRecord, AppFuture
 
 * create a task record and an AppFuture, and return that AppFuture to the user
 
@@ -128,6 +134,8 @@ The first process in the interchange. This runs on the same host as the user wor
 
 Beyond that, on each worker node on our HPC system, a copy of the process worker pool will be running. In this example workflow, our local system is the only worker node, so we should only expect to see one process worker pool, on the local system.
 
+.. index:: ZMQ
+
 These worker pools connect back to the interchange using two network connections (ZMQ over TCP) - so on the interchange process you'll need 2 fds per node - this is a common limitation to "number of nodes" scalability of Parsl. (see `issue #3022 <https://github.com/Parsl/parsl/issues/3022>`_ for a proposal to use one network connection per worker pool)
 
 so inside htex.submit:
@@ -140,6 +148,8 @@ we're going to:
 * send that byte sequence to the interchange over ZMQ
 * create and return an executor future back to the invoking DFK - this is how we're going to signal to the DFK that the task is completed (with a result or failure) so it is part of the propagation route of results all the way back to the user.
 
+.. index:: interchange
+
 The Interchange
 ===============
 
@@ -150,6 +160,8 @@ the matching process so far has been fairly arbitrary but we have been doing som
   .. todo:: what link here? if more stuff merged into Parsl, then the PR can be linkable. otherwise later on maybe a SuperComputing 2024 publication - but still unknown
 
 so now, the interchange sends the task over one of those two zmq-over-TCP connections I talked about earlier... and we're now on the worker node where we're going to run the task.
+
+.. index:: worker pool, pilot jobs
 
 The Process Worker Pool
 =======================
