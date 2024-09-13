@@ -39,7 +39,25 @@ There are a few areas where it helps to have some deeper understanding of whats 
 Functions
 =========
 
+pure pickle
+-----------
+
 you've probably got some notion of what it means to send a function across the network. and those preconceptions are almost definitely not how pickle, dill and parsl do it. So you need to put those preconceptions aside.
+
+``pickle`` on its own cannot send the definition of functions. If you try to pickle a function named ``mymodule.f``, the resulting pickle contains the equivalent of ``from mymodule import f``.
+
+So in order for this to unpickle in the Python process at the other end, that statement ``from mymodule import f`` needs to work. The usual Python reasons why that statement might not work apply to unpickling. For example, ``mymodule`` needs to be installed, and needs to be enough of a compatible version to import ``f``.
+
+.. todo:: the "function is in __main__ which is different remotely"
+
+.. todo:: f does not have a name.
+
+
+dill
+----
+
+
+.. todo:: backref/crossref the worker environment section - it could point here as justification/understanding of which packages should be installed.
 
 Exceptions
 ==========

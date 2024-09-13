@@ -133,3 +133,4 @@ Worker environments
 
 batch job systems generally won't make the environment that your batch job providers look like the environment the submission comes from (in the case of eg. kubernetes, that's very deliberate: the job description describes the environment, not whatever ambient environment existing around the submission command. so there's a bit of tension there when you want the environment to magically look like your submission environment)
 
+generally the python and parsl versions need to be the same as on the submit side (although people often push on this limit, and the serialization chapter will give some hints about understanding what can go wrong)
