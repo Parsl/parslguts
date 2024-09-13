@@ -1,6 +1,8 @@
 Serializing tasks and results with Pickle
 #########################################
 
+.. todo:: some visualizations for pieces of this could be loosely disassembled pickle bytecode - otherwise lacking in code-level visualization
+
 In a lot of the code examples so far, Python objects go from one piece of code ot another as regular arguments or return values. But in a few places, those objects need to move between Python processes and usually that is done by turning them into a byte stream at one end using Python's built in ``pickle`` library, sending that byte stream, and turning the byte stream back into a new Python object at the other end.
 
 Some of the places this happens: 
