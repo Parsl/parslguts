@@ -1,7 +1,7 @@
 Understanding the monitoring database
 #####################################
 
-Parsl can store information about task executions into an sqlite3 database. Then you can look at the information, in a few different ways.
+Parsl can store information about workflow execution into an `SQLite database <https://www.sqlite.org/>`_. Then you can look at the information, in a few different ways.
 
 turning on monitoring
 =====================
