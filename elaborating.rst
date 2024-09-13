@@ -13,7 +13,9 @@ Retries
 
 When the Data Flow Kernel tries to execute a task using an Executor, this is called a try. Usually there will be one try, called try 0.
 
-If the user has configured retries, and if try 0 fails (indicated by the executor setting an exception in the executor future (or error at submit time? TODO)) then the Data Flow Kernel will retry the task. (retry without the re- is where the term "try" comes from)
+If the user has configured retries, and if try 0 fails (indicated by the executor setting an exception in the executor future then the Data Flow Kernel will retry the task. (retry without the re- is where the term "try" comes from)
+
+.. todo:: if try 0 fails *OR IF THERES A SUBMIT ERROR?*
 
 Let's have a look at the launch and retry flow in the Parsl source code. The Data Flow Kernel "launches" tasks into an executor using a method ``_launch_if_ready_async``, starting here
 
@@ -108,9 +110,9 @@ The basic outline is:
     WART: ``handle_app_update`` is a bit of a wart: because it runs in a callback associated with the AppFuture presented to a user, the code there won't necessarily run in any particular order wrt user code and so it can present some race conditions. This code could move into end-of-task completion handling elsewhere in the DFK, perhaps.
 
 
-TODO: do I want to talk about how parameters are keyed here? Note on ignore_for_cache and on plugins (forward ref. plugins)
+.. todo:: do I want to talk about how parameters are keyed here? Note on ignore_for_cache and on plugins (forward ref. plugins)
 
-TODO: make a forward reference to `pickle` section about storing the result (but not the args)
+.. todo:: make a forward reference to `pickle` section about storing the result (but not the args)
 
 Modifying the arguments to a task
 ---------------------------------
@@ -134,7 +136,7 @@ This happens in a few stages:
     logger.debug("Gathered dependencies")
     task_record['depends'] = depends
 
-* TODO: in order to get launch if ready to be called when all the futures are done, each future has a callback added which will invoke launch if ready
+* .. todo:: in order to get launch if ready to be called when all the futures are done, each future has a callback added which will invoke launch if ready
 
 * inside ``_launch_if_ready_async``, ``DataFlowKernel._count_deps`` loops over the Future objects in ``task_record['depends']`` and counts how many are not done. If there are any not-done futures, ``_launch_if_ready_async`` returns without launching:
 
@@ -147,7 +149,7 @@ This happens in a few stages:
   So ``_launch_if_ready_async`` might run several times, once for every dependency ``Future`` that completes. When the final outstanding future completes, that final invocation of ``_launch_if_ready_async`` will see no outstanding dependencies - the task will be ready in the "launch if ready" sense.
 
 
-(TODO: including rich dependency resolving - but that should be an onwards mention of plugin points? and a note about this being a common mistake. but complicated to implement because it needs to traverse arbitrary structures. which might give a bit of a tie-in to how ``id_for_memo`` works)
+.. todo:: including rich dependency resolving - but that should be an onwards mention of plugin points? and a note about this being a common mistake. but complicated to implement because it needs to traverse arbitrary structures. which might give a bit of a tie-in to how ``id_for_memo`` works)
 
 
 File staging
@@ -171,6 +173,6 @@ join_apps (dependencies at the end of a task?)
 * join_app joining - emphasise this as being quite similar to dependency handling.
 
 
-TODO: mention bash_apps which are a similar elaboration, but happen inside the bash_app decorator: beyond the decorator, no part of Parsl has any notion of a "bash app"
+.. todo:: mention bash_apps which are a similar elaboration, but happen inside the bash_app decorator: beyond the decorator, no part of Parsl has any notion of a "bash app"
 
 Summarise by me pointing out that in my mind (not necessarily in the architecture of Parsl) that from a core perspective these are all quite similar, even though the user effects are all very different. Which is a nice way to have an abstraction. And maybe that's an interesting forwards architecture for Parsl one day...
