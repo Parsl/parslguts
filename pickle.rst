@@ -7,6 +7,8 @@ Some of the places this happens:
 
 * sending task definitions (functions and arguments) from the High Throughput executor in the users workflow script to the process worker pool; and sending results back the other way.
 
+.. index:: pair: checkpointing; serialization
+
 * Storing results in the checkpoint database, to be loaded by a later Python process.
 
 * Sending monitoring messages
@@ -36,6 +38,8 @@ For most things that look like simple data structures, pickling is pretty simple
 
 There are a few areas where it helps to have some deeper understanding of whats going on, so that you don't run into "mystery pickling errors because the magic is broken."
 
+.. index:: pair: function; serialization
+
 Functions
 =========
 
@@ -52,10 +56,18 @@ So in order for this to unpickle in the Python process at the other end, that st
 
 .. todo:: f does not have a name.
 
+.. index:: pair: serialization; dill
 
 dill
 ----
 
+An extension of ``pickle`` which is used extensively in Parsl is the ``dill`` library.
+
+.. todo:: hyperlink to dill website/github
+
+This library aims to let you serialize all the bits of Python that pickle cannot deal with, building on top of the Pickle protocol.
+
+For functions, it tries to address the above problems by using its own function serialization, in circumstances where it has decided that the default pickle behaviour will not work (sometimes deciding correctly, sometimes using a heuristic which can go wrong). 
 
 .. todo:: backref/crossref the worker environment section - it could point here as justification/understanding of which packages should be installed.
 
