@@ -77,6 +77,7 @@ To support this, some providers take a ``launcher`` parameter, which understands
 
 All of the included launchers live in `parsl.launchers.launchers <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/launchers/launchers.py>`_ and usually consist of shell scripting around something like ``mpiexec`` or ``srun``.
 
+.. index:: scaling
 
 Choosing when to start or end a block
 =====================================
@@ -85,28 +86,41 @@ Parsl has some scaling code that starts and ends blocks as the task load present
 
 There are three scaling strategies, which run (by default) every 5 seconds.
 
+There are three strategy parameters defined on providers which are used by the scaling strategy: init_blocks, min_blocks and max_blocks. Broadly, at the start of a run, Parsl will launch an initial number of blocks (init_blocks) and then scale between a minimum (min_blocks) and maximum (max_blocks) number of blocks during the run.
+
 The init only strategy, ``none``
 --------------------------------
 
-* none, the init only strategy. This strategy only makes use of the ``init_blocks`` configuration parameter. At the start of a workflow, it starts the specified number of blocks. After that it does not try to start any more blocks.
+This strategy only makes use of the ``init_blocks`` configuration parameter. At the start of a workflow, it starts the specified number of blocks. After that it does not try to start any more blocks.
 
-  TODO: is there a bug here that a workflow will then hang if all its blocks run out? (because the workflow will wait for more blocks to appear?)
+TODO: is there a bug here that a workflow will then hang if all its blocks run out? (because the workflow will wait for more blocks to appear?)
 
 The ``simple`` strategy
 -----------------------
 
-* simple. This strategy will add more blocks when it sees that there are not enough workers.
+This strategy will add more blocks when it sees that there are not enough workers.
 
-  When an executor becomes completely idle for some time, it will cancel all blocks. Even one task on the executor will inhibit cancellation - the history of this is that for abstract block-using executors, there is nothing to identify which blocks (if any) are idle. so scale out and scale in are not symmetric operations in that sense.
+When an executor becomes completely idle for some time, it will cancel all blocks. Even one task on the executor will inhibit cancellation - the history of this is that for abstract block-using executors, there is nothing to identify which blocks (if any) are idle. so scale out and scale in are not symmetric operations in that sense.
 
-  The scaling calculation looks at the number of tasks outstanding and compares it to the number of task slots (worker slots?) that are either running now or queued to be run.
+The scaling calculation looks at the number of tasks outstanding and compares it to the number of task slots (worker slots?) that are either running now or queued to be run.
 
-  There is a ``parallelism`` parameter (where?), to allow users to control the ratio of tasks to workers - by default this is 1 so Parsl will try to submit blocks to give as many worker slots as there are tasks. This does not assign tasks to particular workers: so it is common for one block to start up and a lot of the outstanding work to be processed by that block, before a second block starts which is then completely idle.
+There is a ``parallelism`` parameter (where?), to allow users to control the ratio of tasks to workers - by default this is 1 so Parsl will try to submit blocks to give as many worker slots as there are tasks. This does not assign tasks to particular workers: so it is common for one block to start up and a lot of the outstanding work to be processed by that block, before a second block starts which is then completely idle.
 
-* htex_auto_scale. Like the simple strategy for scale-out, but with better scale-in behaviour that makes use of some High Throughput Executor features: the high throughput executor knows which blocks are empty, so when there is scale-in pressure, can scale-in empty blocks while leaving non-empty blocks still running. Some prototype work has happened to try to make htex try to make blocks empty faster too, but that has not reached the production codebase.
+.. note::
 
-  TODO: reference block draining problem and matthew's work
+   WART: Q: what does init_blocks mean in this context? start i blocks then immediately scale (up or down) to the needed number of blocks?
 
+.. index:: htex_auto_scale
+
+The ``htex_auto_scale`` strategy
+--------------------------------
+
+
+This is like the simple strategy for scale-out, but with better scale-in behaviour that makes use of some High Throughput Executor features: the high throughput executor knows which blocks are empty, so when there is scale-in pressure, can scale-in empty blocks while leaving non-empty blocks still running. Some prototype work has happened to try to make htex try to make blocks empty faster too, but that has not reached the production codebase.
+
+.. note::
+
+  WART: TODO: reference block draining problem and matthew's work
 
 TODO: error handling (two parts of the same feedback loop)
 
