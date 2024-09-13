@@ -69,6 +69,10 @@ This library aims to let you serialize all the bits of Python that pickle cannot
 
 For functions, it tries to address the above problems by using its own function serialization, in circumstances where it has decided that the default pickle behaviour will not work (sometimes deciding correctly, sometimes using a heuristic which can go wrong). 
 
+``dill`` function serialization does not use the ``pickle`` method of sending by reference. Instead it sends the Python bytecode for the function. This does not need the function to be importable at the receiving end. Some downsides of this approach are that Python bytecode is not compatible across Python releases, and ``dill`` does not contain any protection for this: executing bytecode from a different Python version can result in the executing Python process exiting or worse, perhaps even incorrect results. Functions serialized this way can also sometimes bring along a lot of their environment (if dill decides that environment will also not be available remotely) which can result in extremely large serialized forms, and occasionally crashes due to serializing the unserializable - see `Parsl issue #2668 <https://github.com/Parsl/parsl/issues/2668>`_ for example.
+
+.. todo:: URL for Python bytecode/virtual machine documentation?
+
 .. todo:: backref/crossref the worker environment section - it could point here as justification/understanding of which packages should be installed.
 
 Exceptions
