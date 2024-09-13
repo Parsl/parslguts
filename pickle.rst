@@ -40,6 +40,18 @@ For most things that look like simple data structures, pickling is pretty simple
 
 There are a few areas where it helps to have some deeper understanding of whats going on, so that you don't run into "mystery pickling errors because the magic is broken."
 
+Tiny pickle tutorial
+====================
+
+.. code-block:: python
+
+  b: bytes = pickle.dumps(some_obj)
+
+  # send b somewhere through time and space
+
+  some_object.loads(b)
+
+
 .. index:: pair: function; serialization
 
 Functions
