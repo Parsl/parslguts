@@ -1,12 +1,31 @@
 Understanding the monitoring database
 #####################################
 
-this should focus on making use of data in the monitoring database, not on how monitoring is architected, implemented.
+Parsl can store information about task executions into an sqlite3 database. Then you can look at the information, in a few different ways.
 
-give example of the visualizer
+turning on monitoring
+=====================
 
-give examples of plotting in Python
+.. todo:: this section should show a simple configuration
 
-give example of raw SQL
+how to look at information
+==========================
 
-go through each table (and most fields in the tables) and try to put it in context of what we've seen before
+parsl-visualize web UI
+----------------------
+
+.. todo:: this should be a couple of screenshot and not much else
+
+programmatic access
+-------------------
+
+I usually use SQL, but Parsl users are usually more familiar with data processing in Python: you can load the database tables into Pandas data frames and do data frame stuff there.
+
+.. todo:: one example of non-plot (count tasks?)
+
+.. todo:: one example of plotting
+
+What is stored in the database?
+===============================
+
+.. todo:: go through each table (and most fields in the tables) and try to put it in context of what we've seen before
