@@ -73,6 +73,8 @@ Maybe interesting here is what is missing from the ``submit`` call: there is no 
 Launchers
 =========
 
+.. index:: mpirun, srun, mpiexec
+
 Some batch systems separate allocation of worker nodes and execution of commands on worker nodes. In non-Parsl contexts that looks like: you write a batch script and submit it to slurm or PBS, and inside that batch script you prefix your application command line with something like ``mpiexec`` or ``srun`` which causes your application to run on all the worker nodes. Without that prefix, the command would run on a single node (sometimes not even in the batch allocation!)
 
 To support this, some providers take a ``launcher`` parameter, which understands how to put that prefix onto the front of the relevant command. They're mostly quite simple.
