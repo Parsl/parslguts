@@ -51,13 +51,15 @@ The key argument here is ``command``. This will be (after some mutation) be the 
 
 In the HighThroughputExecutor, this command is formed like this at executor start:
 
-TODO
+.. todo:: source code
 
 and then the provider is invoked with it here:
 
-TODO
+.. todo:: source code
 
 In the Task Vine executor, something similar happens at line TODO and line TODO (hrefs)
+
+.. todo:: line numbers / source code link
 
 
 .. note::
@@ -93,7 +95,7 @@ The init only strategy, ``none``
 
 This strategy only makes use of the ``init_blocks`` configuration parameter. At the start of a workflow, it starts the specified number of blocks. After that it does not try to start any more blocks.
 
-TODO: is there a bug here that a workflow will then hang if all its blocks run out? (because the workflow will wait for more blocks to appear?)
+:.. todo:: write this as a wart: is there a bug here that a workflow will then hang if all its blocks run out? (because the workflow will wait for more blocks to appear?)
 
 The ``simple`` strategy
 -----------------------
@@ -120,9 +122,9 @@ This is like the simple strategy for scale-out, but with better scale-in behavio
 
 .. note::
 
-  WART: TODO: reference block draining problem and matthew's work
+  .. todo:: WART: reference block draining problem and matthew's work
 
-TODO: error handling (two parts of the same feedback loop)
+.. todo:: write error handling section (as two parts of the same feedback loop)
 
 Worker environments
 ===================
