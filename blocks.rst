@@ -97,7 +97,7 @@ The init only strategy, ``none``
 
 This strategy only makes use of the ``init_blocks`` configuration parameter. At the start of a workflow, it starts the specified number of blocks. After that it does not try to start any more blocks.
 
-:.. todo:: write this as a wart: is there a bug here that a workflow will then hang if all its blocks run out? (because the workflow will wait for more blocks to appear?)
+.. todo:: write this as a wart: is there a bug here that a workflow will then hang if all its blocks run out? (because the workflow will wait for more blocks to appear?)
 
 The ``simple`` strategy
 -----------------------
