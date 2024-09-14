@@ -1,9 +1,11 @@
-.. index: SQL, monitoring
+.. index:: SQL, monitoring
 
 Understanding the monitoring database
 #####################################
 
 Parsl can store information about workflow execution into an `SQLite database <https://www.sqlite.org/>`_. Then you can look at the information, in a few different ways.
+
+.. index:: monitoring; configuration
 
 turning on monitoring
 =====================
@@ -14,6 +16,7 @@ how to look at information
 ==========================
 
 .. index:: parsl-visualize
+           monitoring; parsl-visualize
 
 parsl-visualize web UI
 ----------------------
@@ -28,6 +31,8 @@ I usually use SQL, but Parsl users are usually more familiar with data processin
 .. todo:: one example of non-plot (count tasks?)
 
 .. todo:: one example of plotting
+
+.. index:: monitoring; schema
 
 What is stored in the database?
 ===============================
