@@ -23,6 +23,7 @@ Why are we doing things this way when an HPC system already has a system for run
 As I mentioned above, most HPC systems have batch job systems that prefer big submissions (in relation to the average Parsl task) and that includes a preference for batch jobs that use many nodes (for example, some systems will offer a discount for batch jobs that use over a certain count - incentivising the use of a small number of many-node batch jobs, even though a pilot job workload could sometimes be scheduled more efficiently with a large number of smaller batch jobs)
 
 .. index:: providers
+           plugins; providers
 
 Starting a block of workers
 ===========================
@@ -68,7 +69,8 @@ In the Task Vine executor, something similar happens at line TODO and line TODO 
 Maybe interesting here is what is missing from the ``submit`` call: there is no mention of batch system queues, no mention of how many nodes to request in this block, no mention of pod image identifiers. Attributes like that are usually the same for every block submitted through (to/by?) the provider, and usually only make sense in the context of whatever the underlying batch system is: for example, a slurm job might have a queue specification and a kubernetes job might have a persistent volume specification, to be set on all jobs. These are defined in the initializer for each provider, so the provider API doesn't need to know about these specifics at all.
 
 
-.. index: launchers
+.. index:: launchers
+           plugins; launchers
 
 Launchers
 =========
@@ -120,6 +122,7 @@ There is a ``parallelism`` parameter (where?), to allow users to control the rat
    WART: Q: what does init_blocks mean in this context? start i blocks then immediately scale (up or down) to the needed number of blocks?
 
 .. index:: htex_auto_scale
+           High Throughput Executor; htex_auto_scale
 
 The ``htex_auto_scale`` strategy
 --------------------------------

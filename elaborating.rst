@@ -10,6 +10,7 @@ Trying tasks many times or not at all
 
 .. index:: tries
            retries
+           plugins; retry_handler
 
 Retries
 =======
@@ -154,6 +155,8 @@ This happens in a few stages:
 
 .. todo:: including rich dependency resolving - but that should be an onwards mention of plugin points? and a note about this being a common mistake. but complicated to implement because it needs to traverse arbitrary structures. which might give a bit of a tie-in to how ``id_for_memo`` works)
 
+
+.. index:: plugins; file staging providers
 
 File staging
 ============

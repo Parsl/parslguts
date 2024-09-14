@@ -52,7 +52,7 @@ Tiny pickle tutorial
   some_object.loads(b)
 
 
-.. index:: pair: function; serialization
+.. index:: serialization; functions
 
 Functions
 =========

@@ -149,7 +149,8 @@ we're going to:
 * create and return an executor future back to the invoking DFK - this is how we're going to signal to the DFK that the task is completed (with a result or failure) so it is part of the propagation route of results all the way back to the user.
 
 .. index:: interchange
-
+           High Throughput Executor; interchange
+ 
 The Interchange
 ===============
 
@@ -160,6 +161,7 @@ The matching process so far has been fairly arbitrary but we have been doing som
 so now, the interchange sends the task over one of those two zmq-over-TCP connections I talked about earlier... and we're now on the worker node where we're going to run the task.
 
 .. index:: worker pool, pilot jobs
+           High Throughput Executor; process worker pool
 
 The Process Worker Pool
 =======================
