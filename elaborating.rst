@@ -181,4 +181,9 @@ join_apps (dependencies at the end of a task?)
 
 .. todo:: mention bash_apps which are a similar elaboration, but happen inside the bash_app decorator: beyond the decorator, no part of Parsl has any notion of a "bash app"
 
+.. todo:: gotta get a monad reference in here somehow, and a functional programming reference. something along the lines of "see also: the theory of monads in functional programming" with a link
+
+Putting these all together
+==========================
+
 Summarise by me pointing out that in my mind (not necessarily in the architecture of Parsl) that from a core perspective these are all quite similar, even though the user effects are all very different. Which is a nice way to have an abstraction. And maybe that's an interesting forwards architecture for Parsl one day...
