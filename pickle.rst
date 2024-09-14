@@ -15,7 +15,7 @@ Some of the places this happens:
 
 * Sending monitoring messages
 
-* Internal communication between some different Python processes - both high throughput executor and the monitoring system involve multiple processes, and they often send each other objects (often dictionaries) over network and interprocess communication. Sometimes without it being explicit (for example, Python's ``multiprocessing`` library makes heavy use of ``pickle``)
+* Communication between some different Python processes - both high throughput executor and the monitoring system involve multiple processes, and they often send each other objects (often dictionaries) over network and interprocess communication. Sometimes without it being explicit (for example, Python's ``multiprocessing`` library makes heavy use of ``pickle``). ZMQ's send_pyobj / recv_pyobj uses ``pickle`` to turn the relevant Python object into a bytestream that can be sent over ZMQ, and back.
 
 A lot of the time, this works pretty transparently and doesn't need much thought: for example, a Python integer object ``123456`` is easy to pickle into something that comes out the other end as an equivalent object.
 
