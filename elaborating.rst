@@ -136,7 +136,7 @@ This happens in a few stages:
     logger.debug("Gathered dependencies")
     task_record['depends'] = depends
 
-* .. todo:: in order to get launch if ready to be called when all the futures are done, each future has a callback added which will invoke launch if ready
+* In order to get launch if ready to be called when all the futures are done, each future has a callback added which will invoke launch if ready
 
 * inside ``_launch_if_ready_async``, ``DataFlowKernel._count_deps`` loops over the Future objects in ``task_record['depends']`` and counts how many are not done. If there are any not-done futures, ``_launch_if_ready_async`` returns without launching:
 
