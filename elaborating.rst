@@ -110,7 +110,7 @@ The basic outline is:
     WART: ``handle_app_update`` is a bit of a wart: because it runs in a callback associated with the AppFuture presented to a user, the code there won't necessarily run in any particular order wrt user code and so it can present some race conditions. This code could move into end-of-task completion handling elsewhere in the DFK, perhaps.
 
 
-.. todo:: do I want to talk about how parameters are keyed here? Note on ignore_for_cache and on plugins (forward ref. plugins)
+.. todo:: do I want to talk about how parameters are keyed here? YES Note on ignore_for_cache and on plugins (forward ref. plugins)
 
 .. todo:: make a forward reference to `pickle` section about storing the result (but not the args)
 
