@@ -70,7 +70,8 @@ So in order for this to unpickle in the Python process at the other end, that st
 
 .. todo:: f does not have a name.
 
-.. index:: pair: serialization; dill
+.. index:: dill
+           serialization; dill
 
 dill
 ----
