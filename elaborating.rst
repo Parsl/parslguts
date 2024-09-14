@@ -8,6 +8,9 @@ In this section, I'm going to present several Parsl features which from a user-f
 Trying tasks many times or not at all
 -------------------------------------
 
+.. index:: tries
+           retries
+
 Retries
 =======
 
