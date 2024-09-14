@@ -96,7 +96,7 @@ the big deal here is with trying to have custom data types, only having them on 
 
 like i said environments have to be consistent. this arises when people try to use insufficiently consistent environments: things work OK most of the time because no "worker side only" objects are sent around,
 
-.. todo:: i think there's a funcx approach to this that i could link to that turns exceptions into strings, which are basic pickle data types we should always be able to unpickle.
+.. todo:: i think there's a funcx approach to this that i could link to that turns exceptions into strings, which are basic pickle data types we should always be able to unpickle. see issue #3474
 
 
 TODOs
