@@ -129,14 +129,17 @@ This is like the simple strategy for scale-out, but with better scale-in behavio
 
 .. note::
 
-  .. todo:: WART: reference block draining problem and matthew's work
+  .. todo:: WART: reference block draining problem and matthew's work.
+
+  What link here? if more stuff merged into Parsl or existing as a PR (I think there is a PR?), then the PR can be linkable. otherwise later on maybe a SuperComputing 2024 publication - but still unknown.
+
 
 .. todo:: write error handling section (as two parts of the same feedback loop)
 
 Worker environments
 ===================
 
-* batch job environments (esp worker_init) - think about parsl requirements a bit more: Python versions, Parsl versions, installed user packages. forward reference serialization chapter.
+batch job environments (esp worker_init) - think about parsl requirements a bit more: Python versions, Parsl versions, installed user packages. forward reference serialization chapter.
 
 batch job systems generally won't make the environment that your batch job providers look like the environment the submission comes from (in the case of eg. kubernetes, that's very deliberate: the job description describes the environment, not whatever ambient environment existing around the submission command. so there's a bit of tension there when you want the environment to magically look like your submission environment)
 
