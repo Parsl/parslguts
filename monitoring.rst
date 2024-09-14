@@ -21,6 +21,10 @@ how to look at information
 parsl-visualize web UI
 ----------------------
 
+Parsl comes with a prototype visualizer for the monitoring database.
+
+Here's a screenshot:
+
 .. todo:: this should be a couple of screenshot and not much else
 
 programmatic access
@@ -42,8 +46,6 @@ The monitoring database SQL schema is defined using SQLAlchemy's ORM model at:
 https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/monitoring/db_manager.py#L132
 
 .. note:: WART: and again at https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/monitoring/visualization/models.py#L12 -- see issue https://github.com/Parsl/parsl/issues/2266
-
-.. todo:: go through each table (and most fields in the tables) and try to put it in context of what we've seen before
 
 These tables are defined:
 
