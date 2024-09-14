@@ -139,11 +139,10 @@ These worker pools connect back to the interchange using two network connections
 so inside htex.submit:
 we're going to:
 
-* serialize the details of the function invocation (the function, the positional args and the keyword args) into a sequence of bytes. this is non-trivial even though everyone likes to believe it is magic and simple. In a later chapter I'll talk about this in much more depth
-
-  .. todo:: link pickle, link serialization chapter
+* serialize the details of the function invocation (the function, the positional args and the keyword args) into a sequence of bytes. `Later, I'll talk about this in much more depth <pickle>`.
 
 * send that byte sequence to the interchange over ZMQ
+
 * create and return an executor future back to the invoking DFK - this is how we're going to signal to the DFK that the task is completed (with a result or failure) so it is part of the propagation route of results all the way back to the user.
 
 .. index:: interchange
