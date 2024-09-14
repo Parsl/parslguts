@@ -29,9 +29,7 @@ Now I will pick apart what happens in that expression near the end where app exe
 
   add(5,3).result()
 
-I'm going to ignore quite a lot, though: the startup/shutdown process (for example, what happens with parsl.load() and what happens at the end of the with block), and I'm going to defer batch system interactions to another section.
-
-.. todo:: in last paragraph, forward links to other sections
+I'm going to ignore quite a lot, though: the startup/shutdown process (for example, what happens with parsl.load() and what happens at the end of the with block), and I'm going to `defer batch system interactions to later <blocks>`.
 
 .. index:: python_app, Python apps, decorators
 
