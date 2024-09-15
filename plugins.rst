@@ -42,7 +42,7 @@ for each, a sentence or two, and a source code reference
 
 * rich dependency (ref back to `elaborating`)
 
-* serialization
+* serialization - although as hinted at in `pickle`, Pickle is also extensible and that is usually the place to plug in hooks.
 
 TODO
 ====
