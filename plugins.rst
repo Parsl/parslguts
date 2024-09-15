@@ -26,3 +26,5 @@ place for research/hacking - eg. want to do some research on doing X with workfl
 place for power users - see policies and decision points paragraph
 
 place for supporting other non-core uses: for example Globus Compute makes use of the plugin API to use only htex and the lrm provider parts of Parsl, and can do that because of the plugin API, where it becomes its own plugin host for the relevant plugins.
+
+use the phrase "dependency injection"
