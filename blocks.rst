@@ -63,8 +63,8 @@ In the Task Vine executor, something similar happens at line TODO and line TODO 
 .. todo:: line numbers / source code link
 
 
-.. note::
-     WART: tasks_per_node is always 1 here when called by Parsl. It should perhaps be removed. It's a vestige of an earlier time when Parsl wanted the batch system to start multiple workers on each worker node (for the long-removed IPyParallel executor). More recent executors, the HighThroughputExecutor, the WorkQueue and TaskVine executor and the MPIExecutor choose to manage (in different ways) how work is performed on a particular node rather than asking the batch system for a particular fixed number of workers.
+.. warning::
+     tasks_per_node is always 1 here when called by Parsl. It should perhaps be removed. It's a vestige of an earlier time when Parsl wanted the batch system to start multiple workers on each worker node (for the long-removed IPyParallel executor). More recent executors, the HighThroughputExecutor, the WorkQueue and TaskVine executor and the MPIExecutor choose to manage (in different ways) how work is performed on a particular node rather than asking the batch system for a particular fixed number of workers.
 
 Maybe interesting here is what is missing from the ``submit`` call: there is no mention of batch system queues, no mention of how many nodes to request in this block, no mention of pod image identifiers. Attributes like that are usually the same for every block submitted through (to/by?) the provider, and usually only make sense in the context of whatever the underlying batch system is: for example, a slurm job might have a queue specification and a kubernetes job might have a persistent volume specification, to be set on all jobs. These are defined in the initializer for each provider, so the provider API doesn't need to know about these specifics at all.
 
@@ -104,7 +104,9 @@ The init only strategy, ``none``
 
 This strategy only makes use of the ``init_blocks`` configuration parameter. At the start of a workflow, it starts the specified number of blocks. After that it does not try to start any more blocks.
 
-.. todo:: write this as a wart: is there a bug here that a workflow will then hang if all its blocks run out? (because the workflow will wait for more blocks to appear?)
+.. warning::
+
+  .. todo:: write this as a wart: is there a bug here that a workflow will then hang if all its blocks run out? (because the workflow will wait for more blocks to appear?)
 
 The ``simple`` strategy
 -----------------------
@@ -117,9 +119,9 @@ The scaling calculation looks at the number of tasks outstanding and compares it
 
 There is a ``parallelism`` parameter (where?), to allow users to control the ratio of tasks to workers - by default this is 1 so Parsl will try to submit blocks to give as many worker slots as there are tasks. This does not assign tasks to particular workers: so it is common for one block to start up and a lot of the outstanding work to be processed by that block, before a second block starts which is then completely idle.
 
-.. note::
+.. warning::
 
-   WART: Q: what does init_blocks mean in this context? start i blocks then immediately scale (up or down) to the needed number of blocks?
+   Question: what does init_blocks mean in this context? start i blocks then immediately scale (up or down) to the needed number of blocks?
 
 .. index:: htex_auto_scale
            High Throughput Executor; htex_auto_scale
@@ -130,9 +132,9 @@ The ``htex_auto_scale`` strategy
 
 This is like the simple strategy for scale-out, but with better scale-in behaviour that makes use of some High Throughput Executor features: the high throughput executor knows which blocks are empty, so when there is scale-in pressure, can scale-in empty blocks while leaving non-empty blocks still running. Some prototype work has happened to try to make htex try to make blocks empty faster too, but that has not reached the production codebase.
 
-.. note::
+.. warning::
 
-  .. todo:: WART: reference block draining problem and matthew's work.
+  .. todo:: reference block draining problem and matthew's work.
 
   What link here? if more stuff merged into Parsl or existing as a PR (I think there is a PR?), then the PR can be linkable. otherwise later on maybe a SuperComputing 2024 publication - but still unknown.
 

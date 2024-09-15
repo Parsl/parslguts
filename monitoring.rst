@@ -45,7 +45,7 @@ The monitoring database SQL schema is defined using SQLAlchemy's ORM model at:
 
 https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/monitoring/db_manager.py#L132
 
-.. note:: WART: and again at https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/monitoring/visualization/models.py#L12 -- see issue https://github.com/Parsl/parsl/issues/2266
+.. warning:: and the schema is defined again at https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/monitoring/visualization/models.py#L12 -- see issue https://github.com/Parsl/parsl/issues/2266
 
 These tables are defined:
 
