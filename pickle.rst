@@ -60,7 +60,7 @@ Functions
 pure pickle
 -----------
 
-you've probably got some notion of what it means to send a function across the network. and those preconceptions are almost definitely Parsl does it. So you need to put those preconceptions aside.
+You have probably got some notion of what it means to send a function across the network, and those preconceptions are almost definitely not how Parsl does it. So you need to put those preconceptions aside.
 
 ``pickle`` on its own cannot send the definition of functions. If you try to pickle a function named ``mymodule.f``, the resulting pickle contains the equivalent of ``from mymodule import f``.
 
