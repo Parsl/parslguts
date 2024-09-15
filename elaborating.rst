@@ -126,7 +126,7 @@ In the previous section I talked about choosing how many times to execute a task
 Dependencies
 ============
 
-Parsl task dependency is mediated by futures: if a task is invoked with some ``Future`` arguments, that task will eventually run when all of those futures have results, with the individual future results substituted in place of the respective ``Future`` arguments.
+Parsl task dependency is mediated by futures: if a task is invoked with some ``Future`` arguments, that task will eventually run when all of those futures have results, with the individual future results substituted in place of the respective ``Future`` arguments. (so you can use *any* ``Future`` as an argument - it doesn't have to be a Parsl ``AppFuture``)
 
 Earlier on (in the retry section) I talked about how ``DataFlowKernel._launch_if_ready_async`` would return rather than launch a task if ``DataFlowKernel._count_deps`` counted any outstanding futures.
 
