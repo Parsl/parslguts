@@ -57,8 +57,8 @@ Tiny pickle tutorial
 Functions
 =========
 
-pure pickle
------------
+Using pickle
+------------
 
 You have probably got some notion of what it means to send a function across the network, and those preconceptions are almost definitely not how Parsl does it. So you need to put those preconceptions aside.
 
@@ -73,8 +73,8 @@ So in order for this to unpickle in the Python process at the other end, that st
 .. index:: dill
            serialization; dill
 
-dill
-----
+Using dill
+----------
 
 Parsl makes extensive use of the `dill library <https://dill.readthedocs.io/en/latest/>`_. Dill aims to let you serialize all the bits of Python that pickle cannot deal with, building on top of the Pickle protocol.
 
