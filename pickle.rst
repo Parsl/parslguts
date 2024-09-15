@@ -60,7 +60,7 @@ Functions
 pure pickle
 -----------
 
-you've probably got some notion of what it means to send a function across the network. and those preconceptions are almost definitely not how pickle, dill and parsl do it. So you need to put those preconceptions aside.
+you've probably got some notion of what it means to send a function across the network. and those preconceptions are almost definitely Parsl does it. So you need to put those preconceptions aside.
 
 ``pickle`` on its own cannot send the definition of functions. If you try to pickle a function named ``mymodule.f``, the resulting pickle contains the equivalent of ``from mymodule import f``.
 
@@ -76,11 +76,7 @@ So in order for this to unpickle in the Python process at the other end, that st
 dill
 ----
 
-An extension of ``pickle`` which is used extensively in Parsl is the ``dill`` library.
-
-.. todo:: hyperlink to dill website/github
-
-This library aims to let you serialize all the bits of Python that pickle cannot deal with, building on top of the Pickle protocol.
+Parsl makes extensive use of the `dill library <https://dill.readthedocs.io/en/latest/>`_. Dill aims to let you serialize all the bits of Python that pickle cannot deal with, building on top of the Pickle protocol.
 
 For functions, it tries to address the above problems by using its own function serialization, in circumstances where it has decided that the default pickle behaviour will not work (sometimes deciding correctly, sometimes using a heuristic which can go wrong). 
 
