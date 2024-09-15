@@ -89,11 +89,13 @@ For functions, it tries to address the above problems by using its own function 
 Exceptions
 ==========
 
-the big deal here is with trying to have custom data types, only having them on the remote side, but then not realising that an exception being raised is also a custom data type.
+The big deal here is with trying to use package specific classes, only having them installed on the remote side, but then not realising that an exception being raised is also a package specific class.
 
-like i said environments have to be consistent. this arises when people try to use insufficiently consistent environments: things work OK most of the time because no "worker side only" objects are sent around,
+Environments have to be consistent all over. That doesn't mean they have to be identicaly. But problems arise when people try to use insufficiently consistent environments: things work OK most of the time because no "worker side only" objects are sent around,
 
-.. todo:: i think there's a funcx approach to this that i could link to that turns exceptions into strings, which are basic pickle data types we should always be able to unpickle. see issue #3474
+Custom classes are also usually sent by reference, in the same way that Python sends functions.
+
+.. todo:: i think there's a funcx approach to this that i could link to that turns exceptions into strings, which are basic pickle data types we should always be able to unpickle. see issue #3474. You lose the ability to catch specific exceptions (at least in the standard Python way).
 
 
 TODOs
