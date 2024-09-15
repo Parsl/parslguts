@@ -41,6 +41,8 @@ I usually use SQL, but Parsl users are usually more familiar with data processin
 What is stored in the database?
 ===============================
 
+.. todo:: deeper dive into workflow/tasks/try table schema - not trying to be comprehensive of all schemas here but those three are a good set to deal with
+
 The monitoring database SQL schema is defined using SQLAlchemy's ORM model at:
 
 https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/monitoring/db_manager.py#L132
