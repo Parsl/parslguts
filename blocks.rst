@@ -138,6 +138,14 @@ This is like the simple strategy for scale-out, but with better scale-in behavio
 
   What link here? if more stuff merged into Parsl or existing as a PR (I think there is a PR?), then the PR can be linkable. otherwise later on maybe a SuperComputing 2024 publication - but still unknown.
 
+Manually starting workers
+-------------------------
+
+You can start workers without using this automated scaling: set init_blocks = min_blocks = max_blocks = 0, and then find the worker command line in the log file and run it yourself in which ever situation you want. This is good for trying things out that the provider or scaling code can't do.
+
+
+block error handling
+====================
 
 .. todo:: write error handling section (as two parts of the same feedback loop)
 
