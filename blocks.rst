@@ -138,11 +138,12 @@ This is like the simple strategy for scale-out, but with better scale-in behavio
 
   What link here? if more stuff merged into Parsl or existing as a PR (I think there is a PR?), then the PR can be linkable. otherwise later on maybe a SuperComputing 2024 publication - but still unknown.
 
-Manually starting workers
--------------------------
+Starting workers in other ways
+------------------------------
 
 You can start workers without using this automated scaling: set init_blocks = min_blocks = max_blocks = 0, and then find the worker command line in the log file and run it yourself in which ever situation you want. This is good for trying things out that the provider or scaling code can't do.
 
+The Work Queue and Task Vine executors also have their own executor specific ways for starting workers: Work Queue has a `worker factory command line tool <https://cctools.readthedocs.io/en/latest/man_pages/work_queue_factory/>`_ and TaskVine has a `worker launch method <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/taskvine/executor.py#L71>`_ configuration parameter.
 
 block error handling
 ====================
