@@ -1,6 +1,52 @@
 Modularity and Plugins
 ######################
 
+Motivation
+==========
+
+
+An example - providers
+======================
+
+who cares about what
+
+the API
+
+An example - retry policies
+===========================
+
+Python exceptions - a user knows more about the exceptions than infrastructure does. That's why Python lets you catch certain exceptions and deal with them in different ways.
+
+Parsl propagates out those exceptions to the user in a future. But by that time it's too late to influence retries.
+
+a simple policy: if i get a worker or manager failure, retry 3 times, because this might be transient. if i get a computation failure (let's say divide by zero) then do not retry because i expect this is "permanent". this is something that doesn't belong in the Parsl codebase: it is application specific behaviour. So we're using plugin concept here to allow users to attach their application code into parsl in a way that cannot be done through the main task interface.
+
+Run through of all the plugin points I can think of
+===================================================
+
+for each, a sentence or two, and a source code reference
+
+* executors
+
+* providers
+
+* launchers
+
+* (scheduled for removal) Channels - so I won't describe them
+
+* retry handlers
+
+* memoizer key calculator (id_for_memo) (ref back to `elaborating`)
+
+* file staging (ref back to `elaborating`)
+
+* rich dependency (ref back to `elaborating`)
+
+* serialization
+
+TODO
+====
+
 there have been a few places in earlier sections where i have talked (in different ways) about plugging in different pieces of code - the biggest examples being providers and executors.
 
 which bits you can swap for other plugins: how and why
