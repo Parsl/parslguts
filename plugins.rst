@@ -47,6 +47,9 @@ for each, a sentence or two, and a source code reference
 TODO
 ====
 
+this is an architectural style rather than an API
+
+
 there have been a few places in earlier sections where i have talked (in different ways) about plugging in different pieces of code - the biggest examples being providers and executors.
 
 which bits you can swap for other plugins: how and why
