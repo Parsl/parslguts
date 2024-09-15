@@ -40,6 +40,8 @@ for each, a sentence or two, and a source code reference
 
 * file staging (ref back to `elaborating`)
 
+* default stdout/stderr name generation
+
 * rich dependency (ref back to `elaborating`)
 
 * serialization - although as hinted at in `pickle`, Pickle is also extensible and that is usually the place to plug in hooks.
