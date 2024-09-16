@@ -108,20 +108,24 @@ The most important parameters to see are the function to execute, stored in ``fu
 
      Magic methods surrounded by double underscores are the standard Python way to make arbitrary classes customize standard Python behaviour. The most common one is probably ``__repr__`` which allows a class to define how it is rendered as a string. There are lots of others documented in the `Python data model <https://docs.python.org/3/reference/datamodel.html>`_.
 
-.. index:: DFK, Data Flow Kernel, God object
+.. index:: DFK, Data Flow Kernel, God object, task, TaskRecord, AppFuture
 
 The Data Flow Kernel
 ====================
 
-we can have a look at that method and see that to "invoke an app", we call a method on the DataFlowKernel (DFK), the core object for a workflow (historically following the `God-object antipattern <https://en.wikipedia.org/wiki/God_object>`_).
+The code above called the ``submit`` method on a Data Flow Kernel (DFK), the core object for a workflow. That call created a task inside the DFK. Every app invocation is paired with a task inside the DFK, and the terminology will use those terms fairly interchangeably.
 
-inside the DFK:
+The DFK follows the `God-object antipattern <https://en.wikipedia.org/wiki/God_object>`_ and is a repository for quite a lot of different pieces of functionality in addition to task handling. For example, it is the class which handles start up and shutdown of all the other pieces of Parsl (including block scaling, executors, monitoring, usage tracking and checkpointing). I'm not going to cover any of that here, but be aware when you look through the code that you will see all of that in addition to task handling.
 
-.. index:: TaskRecord, AppFuture
+Inside ``dfk.submit`` (in `parsl/dataflow/dflow.py around line 963 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L963>`_) two data structures are created: a ``TaskRecord`` and an ``AppFuture``.
 
-* create a task record and an AppFuture, and return that AppFuture to the user
+An ``AppFuture`` is a very thin layer around Python's `concurrent.futures.Future class <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future>`_. This is returned from the ``submit`` method immediately, and is what will be used to communicate task completion to the submitting user later on.
 
-.. todo:: hyperlink to TaskRecord and describe it a bit more
+The ``TaskRecord`` (defined in `parsl/dataflow/taskrecord.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/taskrecord.py>`_) contains most of the state for a task.
+
+From the many fields in ``TaskRecord``, what we need for now are fields for the function to run, positional and keyword arguments and a reference to the ``AppFuture`` so it can have a result set later.
+
+.. todo:: continue from here
 
 Then asynchronously:
 
