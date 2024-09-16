@@ -118,6 +118,8 @@ The basic outline is:
 
 .. todo:: make a forward reference to `pickle` section about storing the result (but not the args)
 
+.. todo:: task identity and dependencies: there is a notion of "identity" of a task across runs here, that is different from the inside-a-run identity (aka the task id integer allocated sequentially) -- it's the hash of all arguments to the app. So what might look like two different invocations fut1 = a(1); fut2 = a(1) to most of Parsl, is actually two invocations of "the same" task as far as checkpointing is concerned (because the two invocations of ``a`` have the same argument). Another subtlety here is that this identity can't be computed (and so we can't do any checkpoint-replacement) until the dependencies of a task have been completed - we have to run the dependencies of a task T (perhaps themselves by checkpoint restore) before we can ask if task T itself has been checkpointed.
+
 Modifying the arguments to a task
 ---------------------------------
 
