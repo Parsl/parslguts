@@ -23,12 +23,12 @@ Here's a simple workflow that you can run on a single computer. I'll point out a
 
 This is nothing fancy: there's a config in my preferred style, with almost every parameter getting a suitable default value. All that is changed is to use the High Throughput Executor, rather than the default (and boring) Thread Pool Executor.
 
-I'm going to ignore quite a lot, though: the startup/shutdown process (what happens with parsl.load() and what happens at the end of the ``with`` block); I'm going to defer batch system interactions to `later <blocks>`, and this example avoids many of Parsl's workflow features which I will cover in a section on `task elaboration <elaborating>`.
+I'm going to ignore quite a lot, though: the startup/shutdown process (what happens with parsl.load() and what happens at the end of the ``with`` block); I'm going to defer batch system interactions to the `blocks chapter <blocks>`, and this example avoids many of Parsl's workflow features which I will cover in the `task elaboration chapter <elaborating>`.
 
 .. index:: python_app, Python apps, decorators
 
-A ``python_app``
-================
+Defining a ``python_app``
+=========================
 
 .. code-block:: python
 
@@ -36,44 +36,77 @@ A ``python_app``
   def add(x: int, y: int) -> int:
     return x+y
 
-Normally ``def`` defines a function (or a method) in Python. With the ``python_app`` decorator, Parsl gets to change that into something slightly different: a "Python app" which mostly looks like function but with fancy Parsl bits added. The relevant fancy bit for this example is that instead of returning an ``int`` when invoked, ``add`` will instead return a ``Future[int]`` that will some time later get the result of the underlying function.
+Normally ``def`` defines a function (or a method) in Python. With the ``python_app`` decorator (defined at `parsl/app/app.py line 108 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/app.py#L108>`_), Parsl gets to change that into something different: this now defines a "Python app" which mostly looks like a function but with fancy Parsl bits added. The relevant fancy bit for this example is that instead of returning an ``int`` when invoked, ``add`` will instead return a ``Future[int]`` that will some time later get the result of the underlying function.
 
-What happens when making this definition is that Python *does* make a regular function, but instead of binding the name ``add`` to that function, instead it passes it to a decorating function ``parsl.python_app``. That decorating function is allowed to do pretty much anything, but in Parsl it replaces the function definition with a new ``PythonApp`` object, constructed from that underlying regular function (and a few other parameters).
+What happens when making this definition is that Python *does* make a regular function, but instead of binding the name ``add`` to that function, instead the function body is passed to a decorating function ``parsl.python_app`` and whatever comes out of that is bound to the name ``add``. A decorating function is allowed to do pretty much anything: python_app replaces the function definition with a new ``PythonApp`` object.
 
-.. todo:: link to Python decorator description, perhaps in python docs?
+You can also view what happens here as equivalent to this:
 
-link to parsl.python_app source code: `parsl/app/app.py line 108 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/app.py#L108>`_
+.. code-block:: python
 
-.. todo:: link to PythonApp code
+  def add(x: int, y: int) -> int:
+    return x+y
 
-Later on, when the workflow executes this expression:
+  add = parsl.python_app(add)
+
+
+A normal function in Python has this type:
+
+.. code-block:: python
+
+  >>> def somefunc():
+  >>>   return 7
+
+  >>> print(type(somefunc))
+  <class 'function'>
+
+
+but our just defined Python app looks like this:
+
+.. code-block:: python
+
+  >>> print(type(add))
+  <class 'parsl.app.python.PythonApp'>
+
+.. seealso::
+     You can read more about decorators in the `Python glossary <https://docs.python.org/3/glossary.html#term-decorator>`_.
+
+Invoking a ``python_app``
+=========================
+
+If ``add`` isn't a function, what does this code invoke?
 
 .. code-block:: python
 
   add(5,3)
 
-what is being invoked here is the ``add`` ``PythonApp``, not the underlying function that the workflow seemed to be defining.
-
-What does it mean to call an object instead of a function (or method)? What happens is that Python looks on that object for a method called ``__call__`` and invokes that method with all the parameters. Double-underscore methods are the standard way in Python for overriding things. The most common one is probably ``__repr__`` but there are loads of them described throughout https://docs.python.org/3/reference/datamodel.html 
-
-The ``PythonApp`` implementation of ``__call__`` doesn't do too much: it massages arguments a bit but ultimately delegates all the work to the next component along, the Data Flow Kernel. The submit method returns immediately, also without executing anything. It returns a ``Future``, ``app_fut``, which ``PythonApp.__call__`` returns to its own caller.
-
-.. todo:: some different syntax highlighting/background to indicate this is from Parsl source code?
+Any class can be used with function call syntax, if it implements the ``__call__`` magic method. Here is the ``PythonApp`` implementation, in `parsl/app/python.py, line 50 onwards <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/python.py#L50>`_:
 
 .. code-block:: python
 
-  app_fut = dfk.submit(func, app_args=args,
-                       executors=self.executors,
-                       cache=self.cache,
-                       ignore_for_cache=self.ignore_for_cache,
-                       app_kwargs=invocation_kwargs,
-                       join=self.join)
+    def __call__(self, *args, **kwargs):
 
-  return app_fut
+      # ...
 
-So what the decorator has mostly done is overload Python function syntax, so that it can be used to submit tasks to the Data Flow Kernel, which handles most of the interesting stuff to do with a task.
+      app_fut = dfk.submit(func, app_args=args,
+                           executors=self.executors,
+                           cache=self.cache,
+                           ignore_for_cache=self.ignore_for_cache,
+                           app_kwargs=invocation_kwargs,
+                           join=self.join)
 
-The three important parameters here are ``func`` - the underlying function that we want to execute, ``app_args`` - a list of positional arguments to be passed to that function, and ``app_kwargs`` - a dict of keyword arguments to be passed to that function. We'll be moving these three structures around all over the place (and sometimes changing them) until the task is eventually executed.
+      return app_fut
+
+
+The ``PythonApp`` implementation of ``__call__`` doesn't do too much: it massages arguments a bit but ultimately delegates all the work to the next component along, the Data Flow Kernel referenced by the ``dfk`` variable. ``dfk.submit`` returns immediately, without executing anything. It returns a ``Future`` which will eventually get the final task result, and ``PythonApp`` returns that ``Future`` to its own caller.
+
+The most important parameters to see are the function to execute, stored in ``func`` and the arguments in ``app_args`` (a list of positional arguments) and ``app_kwargs`` (a ``dict`` of keyword arguments). Those three things are what we will need later on to invoke our function somewhere else, and a lot of the rest of task flow is about moving these around and sometimes changing them.
+
+.. todo:: some different syntax highlighting/background to indicate this is from Parsl source code?
+
+.. seealso::
+
+     Magic methods surrounded by double underscores are the standard Python way to make arbitrary classes customize standard Python behaviour. The most common one is probably ``__repr__`` which allows a class to define how it is rendered as a string. There are lots of others documented in the `Python data model <https://docs.python.org/3/reference/datamodel.html>`_.
 
 .. index:: DFK, Data Flow Kernel, God object
 

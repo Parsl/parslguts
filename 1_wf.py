@@ -12,3 +12,9 @@ def add(x: int, y: int) -> int:
 with parsl.load(fresh_config()):
   print(add(5,3).result())
 
+def somefunc():
+  return 7
+
+print(type(somefunc))
+
+print(type(add))
