@@ -1,9 +1,9 @@
 A sample task execution path
 ############################
 
-In this section, I'll walk through the code path of a single Parsl task from invoking an app to running on an HighThroughputExecutor worker, and then sending the result back.
+In this section, I'll walk through the code as it executes a single Parsl task: from defining and invoking an app, through to running on a High Throughput Executor worker, and back again.
 
-Here's a simple workflow that you can run on a single computer. I'll point out as we go which bits would run on a worker node when running on an HPC system - but otherwise, as far as this section is concerned there isn't much difference between a single node and multiple node workflow run.
+Here's a simple workflow that you can run on a single computer. I'll point out as we go which bits would run on a worker node when running on an HPC system - but as far as this section is concerned there isn't much difference between running locally on your laptop vs using a multiple-node configuration.
 
 .. code-block:: python
 
@@ -21,15 +21,9 @@ Here's a simple workflow that you can run on a single computer. I'll point out a
   with parsl.load(fresh_config()):
     print(add(5,3).result())
 
-This is deliberately nothing fancy: there's a config in my preferred style, with almost every parameter getting a suitable default value. All that is changed is to use the High Throughput Executor, which is much more interesting than the default Thread Pool Executor; there is a single almost trivial app definition; and the code invokes it once, without any novelties like dependencies.
+This is nothing fancy: there's a config in my preferred style, with almost every parameter getting a suitable default value. All that is changed is to use the High Throughput Executor, rather than the default (and boring) Thread Pool Executor.
 
-Now I will pick apart what happens in that expression near the end where app execution actually happens:
-
-.. code-block:: python
-
-  add(5,3).result()
-
-I'm going to ignore quite a lot, though: the startup/shutdown process (for example, what happens with parsl.load() and what happens at the end of the with block), and I'm going to `defer batch system interactions to later <blocks>`.
+I'm going to ignore quite a lot, though: the startup/shutdown process (what happens with parsl.load() and what happens at the end of the ``with`` block); I'm going to defer batch system interactions to `later <blocks>`, and this example avoids many of Parsl's workflow features which I will cover in a section on `task elaboration <elaborating>`.
 
 .. index:: python_app, Python apps, decorators
 
