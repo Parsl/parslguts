@@ -22,6 +22,8 @@ Why are we doing things this way when an HPC system already has a system for run
 
 As I mentioned above, most HPC systems have batch job systems that prefer big submissions (in relation to the average Parsl task) and that includes a preference for batch jobs that use many nodes (for example, some systems will offer a discount for batch jobs that use over a certain count - incentivising the use of a small number of many-node batch jobs, even though a pilot job workload could sometimes be scheduled more efficiently with a large number of smaller batch jobs)
 
+In Parsl, this terminology is used to separate out batch *jobs* which are the units of work submitted to a batch system, and correspond to blocks of workers; and *tasks* which correspond to individual app invocations (mentioned in the previous chapter). These are different things, and there is no pre-planned allocation of which task will run inside which batch job, because worker pools running inside jobs pull tasks as they are ready for more work.
+
 .. index:: providers
            plugins; providers
 
