@@ -108,7 +108,7 @@ This strategy only makes use of the ``init_blocks`` configuration parameter. At 
 
 .. warning::
 
-  .. todo:: write this as a wart: is there a bug here that a workflow will then hang if all its blocks run out? (because the workflow will wait for more blocks to appear?)
+  Question: What happens if all of these initially started blocks terminate before all of the workflow's work is completed?
 
 The ``simple`` strategy
 -----------------------
