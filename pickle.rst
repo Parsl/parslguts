@@ -68,7 +68,33 @@ So in order for this to unpickle in the Python process at the other end, that st
 
 .. todo:: the "function is in __main__ which is different remotely"
 
-.. todo:: f does not have a name.
+.. todo:: f does not have a name
+
+     This can happen in a few ways: the biggest one for Parsl is that a python-app decorated function (yes, that's every app defined using a decorator) - the function body won't be the same as the value assigned to the app name variable. because that vairable is used for the PythonApp object, not the underlying function.
+
+     That can be worked around by letting a function get a global name, using a variant of the decorator syntax I talked about n the first chapter:
+
+
+     .. code-block:: python
+
+       def myfunc(a,b):
+         return a+b
+
+       myapp = python_app(myfunc)
+
+     now the underlying function is available with ``from wherever import myfunc`` and the Parsl app equivalent can be invoked with ``myapp(3,4)``.
+
+     Another situation where a function does not have a global name is when it is defined as a closure inside another function:
+
+    .. code-block:: python
+
+      def add_const(n):
+        def myfunc(a,n):
+          return a+n
+
+      myapp = python_app(add_const(7))
+
+    This is pretty common in certain functional styles of Python programming. One way to think about how it is a problem is to try to write an ``import`` statement to import the underlying function for ``myapp``.
 
 .. index:: dill
            serialization; dill
@@ -85,6 +111,17 @@ For functions, it tries to address the above problems by using its own function 
 .. todo:: URL for Python bytecode/virtual machine documentation?
 
 .. todo:: backref/crossref the worker environment section - it could point here as justification/understanding of which packages should be installed.
+
+Dill vs Pickle
+--------------
+
+dill and pickle will between them usually be able to serialize a function one way or the other, but it can be quite subtle which method was chosen, and the two methods have very different characteristics:
+
+* pickle: if we can import the function from an installed library. works across python versions
+
+* dill: if we cannot import the function from an installed library. likely to cause random behaviour across python versions.
+
+subtleties of chosing between the two include where a file is imported from (so that dill might decide it is an installed library, which can be serialized as an ``import``, or might decide it is not an installed library but instead user code that it does not expect to be available remotely and so must be sent as bytecode)
 
 Exceptions
 ==========
