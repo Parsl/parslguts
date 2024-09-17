@@ -81,6 +81,8 @@ If so, mark the task as state ``pending`` (again) at line 384 and then later on 
 
 If there isn't enough retry budget left, then line 392 onwards marks the task as ``failed`` and marks the task's ``AppFuture`` as completed with the same exception that the executor future failed with. This is also how tasks fail In the default configuration with no retries: this code path is taken on all failures because the default retry budget is 0.
 
+.. index:: plugins; checkpointing
+
 Checkpointing
 =============
 
@@ -159,11 +161,13 @@ This happens in a few stages:
 
   So ``_launch_if_ready_async`` might run several times, once for every dependency ``Future`` that completes. When the final outstanding future completes, that final invocation of ``_launch_if_ready_async`` will see no outstanding dependencies - the task will be ready in the "launch if ready" sense.
 
+.. todo:: this doesn't talk about any substitution of the results for ``Future`` objects!
 
 .. todo:: including rich dependency resolving - but that should be an onwards mention of plugin points? and a note about this being a common mistake. but complicated to implement because it needs to traverse arbitrary structures. which might give a bit of a tie-in to how ``id_for_memo`` works)
 
 
 .. index:: plugins; file staging providers
+           File
 
 File staging
 ============
