@@ -240,9 +240,22 @@ Rich dependency resolving
 Wrapping tasks with more Python
 -------------------------------
 
-* monitoring resource wrapper
+The file staging section talked about replacing the user's original app function with a wrapper that does staging as well as executing the wrapped original function.
 
-* backref to file staging
+That's a common pattern in Parsl, and happens in at least these places:
+
+* Bash apps, which execute a unix command line, are mostly implemented by wrapping ``remote_side_bash_executor`` (in `parsl/app/bash.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/bash.py#L13>`_) around the user's Python app code. On the remote worker, that wrapper executes the user's Python app code to generate the command line to run, and then executes that as a unix command, turning the resulting unix exit code into an exception if necessary.
+
+* When resource monitoring is turned on, the DFK wraps the users task in a monitoring wrapper at launch, at `parsl/dataflow/dflow.py line 74 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L747>`_. This wrapper starts a separate unix process that runs alongside the worker, sending information about resource usage (such as memory and CPU times) back to the monitoring system.
+
+* The python_app timeout parameter is implemented as a thread which injects an exception into an executing Python app when the timeout is reached. See `parsl/app/python.py line 18 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/python.py#L18>`_.
+
+* All apps are wrapped with ``wrap_error``. This wrapper (defined in `parsl/app/errors.py line 134 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/errors.py#L134>`_) catches exceptions raised by the user's app code and turns it into a  RemoteExceptionWrapper object. This is intended to make execution more robust when used with executors which do not properly handle exceptions in running tasks. The RemoteExceptionWrapper is unwrapped back into a Python exception as part of the Data Flow Kernel's result handling.
+
+.. note::
+
+  This is one of the hardest (for me) conceptual problems with dealing generally with MPI. What does an MPI "run this command line on n ranks" task interface look like when we also want to say "run this arbitrary wrapped Python around a task"?
+
 
 join_apps (dependencies at the end of a task?)
 --------------------------------------------------------
