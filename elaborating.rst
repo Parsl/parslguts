@@ -187,6 +187,10 @@ Another modification to the arguments of a task happens with the file staging me
 
 The special meaning is that when a user supplies a ``File`` object as a parameter, then Parsl should arrange for file staging to happen before the task runs or after the task completes.
 
+.. warning::
+
+  As with checkpointing, the terminology around file staging is a bit jumbled. There is a historical conflation of "files" and "data" so file staging is sometimes called data staging, and a big piece of staging code is called the "data manager", despite being focused on files not other data such as Python objects. In configuration, file staging providers are configured using a "storage access" parameter.
+
 In ``DataFlowKernel.submit``, at task submit time, the arguments are examined for file objects, and the file staging code can make substitutions. Like dependencies, substitutions can happen to positional and keywords arguments, but the function to be executed can be substituted too!
 
 .. code-block:: python
@@ -206,6 +210,15 @@ In ``DataFlowKernel.submit``, at task submit time, the arguments are examined fo
                'func': func,
                'kwargs': app_kwargs})
 
+This supports two styles of file staging:
+
+A file staging provider (invoked inside ``_add_input_deps`` or ``_add_output_deps``) can submit staging tasks to the workflow. For staging in, it can create stage-in tasks and substitute a ``Future`` for the original ``File`` object. These futures will then be depended on by the dependency handling code which runs soon after. For outputs, tasks can be submitted which depend on the task completing, by depending on ``app_fu``. With this style of staging, file transfers are treated as their own workflow tasks and so, for example, you can see them as separate tasks in the monitoring database.
+
+The other style of file staging runs as a wrapper around the application function. A file staging provider replaces the function defined by the app with a new function which performs any stage in, runs the original app function, performs any stage out and returns the result from the app function. This style is aimed at situations where staging must happen close to the task - for example, if there is no shared filesystem between workers, then it doesn't make sense to stage in a file on one arbitary worker and then try to use it on another arbitrary worker.
+
+Parsl has example HTTP staging providers for both styles so you can compare how they operate. These are in `parsl/data_provider/http.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/data_provider/http.py>`_.
+
+.. todo:: maybe a simple DAG to modify here based on previous staging talks
 
 
 .. warning::
