@@ -263,13 +263,25 @@ That's a common pattern in Parsl, and happens in at least these places:
   This is one of the hardest (for me) conceptual problems with dealing generally with MPI. What does an MPI "run this command line on n ranks" task interface look like when we also want to say "run this arbitrary wrapped Python around a task"?
 
 .. index:: join_app
+           Globus Compute
+           sub-workflows
+           monads
 
-join_apps (dependencies at the end of a task?)
---------------------------------------------------------
+Join apps: dependencies at the end of a task
+--------------------------------------------
 
-join_app joining - emphasise this as being quite similar to dependency handling.
+Join apps are a way to launch new tasks (and other Future-like) behaviour inside a workflow, avoiding blocking use of ``Future.result()`` which can hurt concurrency.
 
-.. todo:: gotta get a monad reference in here somehow, and a functional programming reference. something along the lines of "see also: the theory of monads in functional programming" with a link
+The original idea for them was to allow "sub-workflows" to be launched as results became available, when the sub-workflow couldn't even be described until some result is available - for example, we need to launch n tasks but we don't know what n is until later.
+
+Later on, it turned out they can be used to calls into other execution systems that return ``Future`` objects. For example, here's a blog post about `submitting into Globus Compute using join apps <http://parsl-project.org/2024/06/26/parsl-globus-compute.html>`_.
+
+.. todo:: join_app joining - emphasise this as being quite similar to dependency handling.
+
+.. seealso::
+
+  If you're interested in functional programming, join apps basically treat futures as a forming a `monad <https://en.wikipedia.org/wiki/Monad_(functional_programming)>`_. The term "join" comes from monadic join that takes ``Future[Future[X]] -> Future[X]`` which is the extra behaviour that join apps add onto the end of regular Python apps. If none of that makes sense, don't worry: you don't need category theory to use ``join_app``!
+
 
 Putting these all together
 ==========================
