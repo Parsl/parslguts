@@ -7,4 +7,4 @@ These are notes for a 3 hour course (6 x 25 minute sessions) for experienced Par
 
 This text is not intended to be a comprehensive guide to all parts of the Parsl codebase, but it should get you started on further exploration.
 
-You might like to have a throw-away installation of Parsl 2024.09.02 that you can work with as you go through these notes.
+You might like to have a throw-away installation of `Parsl 2024.09.02 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd>`_ that you can work with as you go through these notes.
