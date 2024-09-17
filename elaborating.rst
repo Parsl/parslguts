@@ -11,6 +11,8 @@ Trying tasks many times or not at all
 .. index:: tries
            retries
            plugins; retry_handler
+           TaskRecord; depends
+           TaskRecord; fail_cost
 
 Retries
 =======
@@ -124,6 +126,8 @@ Modifying the arguments to a task
 
 In the previous section I talked about choosing how many times to execute a task. In this section, I'll talk about modifying the task before executing it, driven by certain special kinds of arguments.
 
+.. index:: TaskRecord; depends
+
 Dependencies
 ============
 
@@ -133,9 +137,10 @@ Earlier on (in the retry section) I talked about how ``DataFlowKernel._launch_if
 
 This happens in a few stages:
 
-* as part of ``DataFlowKernel.submit`` (the entry point for all task submissions), ``DataFlowKernel._gather_all_deps`` examines al of the arguments for the task to find ``Future`` objects to depend on. These are then stored into the task record. https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L1078
+* as part of ``DataFlowKernel.submit`` (the entry point for all task submissions), at `line 1078 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L1078>`_, ``DataFlowKernel._gather_all_deps`` examines al of the arguments for the task to find ``Future`` objects that the task depends on. These are then stored into the task record. 
 
   .. code-block:: python
+    :lineno-start: 1078
 
     depends = self._gather_all_deps(app_args, app_kwargs)
     logger.debug("Gathered dependencies")
@@ -146,6 +151,7 @@ This happens in a few stages:
 * inside ``_launch_if_ready_async``, ``DataFlowKernel._count_deps`` loops over the Future objects in ``task_record['depends']`` and counts how many are not done. If there are any not-done futures, ``_launch_if_ready_async`` returns without launching:
 
   .. code-block:: python
+    :lineno-start: 304
 
     if self._count_deps(task_record['depends']) != 0:
       logger.debug(f"Task {task_id} has outstanding dependencies, so launch_if_ready skipping")
