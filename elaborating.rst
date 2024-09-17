@@ -114,8 +114,7 @@ The basic outline is:
 * if a task is actually run by an executor (because it was not available in the existing checkpoint database), then on completion (in ``DataFlowKernel.handle_app_update`` which is another callback, this time run when an AppFuture is completed) ``DataFlowKernel.checkpoint`` will be invoked to store the new result into the ``Memoizer`` and (depending on configuration) the checkpoint database, at `line 566 onwards <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L566>`_.
 
   .. warning::
-    ``handle_app_update`` is a bit of a concurrency wart: because it runs in a callback associated with the AppFuture presented to a user, the code there won't necessarily run in any particular order wrt user code and so it can present some race conditions. This code could move into end-of-task completion handling elsewhere in the DFK, perhaps.
-
+    ``handle_app_update`` is a bit of a concurrency wart: because it runs in a callback associated with the AppFuture presented to a user, the code there won't necessarily run in any particular order wrt user code and so it can present some race conditions. This code could move into end-of-task completion handling elsewhere in the DFK, perhaps. See `issue #1279 <https://github.com/Parsl/parsl/issues/1279>`_.
 
 .. todo:: do I want to talk about how parameters are keyed here? YES Note on ignore_for_cache and on plugins (forward ref. plugins)
 
@@ -180,16 +179,49 @@ This happens in a few stages:
 
 
 
-.. todo:: including rich dependency resolving - but that should be an onwards mention of plugin points? and a note about this being a common mistake. but complicated to implement because it needs to traverse arbitrary structures. which might give a bit of a tie-in to how ``id_for_memo`` works)
-
-
 .. index:: plugins; file staging providers
            File
 
 File staging
 ============
 
-file staging (mention how these are a bit like fancy dependency substition)
+Another modification to the arguments of a task happens with the file staging mechanism. In the dependency handling code, special meaning is attached to ``Future`` objects. In the file staging code, special meaning is attached to ``File`` objects.
+
+The special meaning is that when a user supplies a ``File`` object as a parameter, then Parsl should arrange for file staging to happen before the task runs or after the task completes.
+
+In ``DataFlowKernel.submit``, at task submit time, the arguments are examined for file objects, and the file staging code can make substitutions. Like dependencies, substitutions can happen to positional and keywords arguments, but the function to be executed can be substituted too!
+
+.. code-block:: python
+   :lineno-start: 1058
+
+   # Transform remote input files to data futures
+   app_args, app_kwargs, func = self._add_input_deps(executor, app_args, app_kwargs, func)
+
+   func = self._add_output_deps(executor, app_args, app_kwargs, app_fu, func)
+
+   logger.debug("Added output dependencies")
+
+   # Replace the function invocation in the TaskRecord with whatever file-staging
+   # substitutions have been made.
+   task_record.update({
+               'args': app_args,
+               'func': func,
+               'kwargs': app_kwargs})
+
+
+
+.. warning::
+
+   .. todo:: note about app future completing as soon as the value is available and not waiting till stage-out has happened -  See `issue #1279 <https://github.com/Parsl/parsl/issues/1279>`_.
+
+
+
+Rich dependency resolving
+=========================
+
+.. todo:: including rich dependency resolving - but that should be an onwards mention of plugin points? and a note about this being a common mistake. but complicated to implement because it needs to traverse arbitrary structures. which might give a bit of a tie-in to how ``id_for_memo`` works)
+
+
 
 .. note::
   Future development: these can look something like "build a sub-workflow that will replace this argument with the result of a sub-workflow" but not quite: file staging for example, has different modes for outputs, and sometimes replaces the task body with a new task body, rather than using a sub-workflow. Perhaps a more general "rewrite a task with different arguments, different dependencies, different body" model?
