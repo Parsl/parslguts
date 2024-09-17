@@ -91,23 +91,23 @@ Parsl checkpointing does not try to capture and restore the state of a whole Pyt
 
 The basic outline is:
 
-* when a workflow is started with an existing checkpointing database specified in ``Config.checkpoint_files``, all of the entries in all of those files are loaded in to an in-memory ``dict`` stored in a ``Memoizer``. This happens in ``DataFlowKernel.__init__`` https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L168  
+* when a workflow is started with an existing checkpointing database specified in ``Config.checkpoint_files``, all of the entries in all of those files are loaded in to an in-memory ``dict`` stored in a ``Memoizer``. This happens in ``DataFlowKernel.__init__`` at `line 168 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L168>`_.
 
-* when a task is ready to run, ``DataFlowKernel._launch_if_ready_async`` calls ``DataFlowKernel.launch_task``. This will usually submit the task to the relevant executor at line 761 https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L761 returning a ``Future`` that will eventually hold the completed result. But a few lines before at line 728 will check the ``Memoizer`` to see if there is a cached result, and if so, return early with a ``Future`` from the ``Memoizer`` contained in the cached result.
-
-  https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L728
+* when a task is ready to run, ``DataFlowKernel._launch_if_ready_async`` calls ``DataFlowKernel.launch_task``. This will usually submit the task to the relevant executor at `line 761 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L761>`_ returning a ``Future`` that will eventually hold the completed result. But a few lines before at `line 728 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L728>`_, it will check the ``Memoizer`` to see if there is a cached result, and if so, return early with a ``Future`` from the ``Memoizer`` contained in the cached result in place of a ``Future`` from the executor.
 
   .. code-block:: python
+    :lineno-start: 728
 
+    memo_fu = self.memoizer.check_memo(task_record)
     if memo_fu:
       logger.info("Reusing cached result for task {}".format(task_id))
       task_record['from_memo'] = True
       assert isinstance(memo_fu, Future)
       return memo_fu
 
-  So the rest of the code still sees an "executor-level" future, but it happens to now come from the ``Memoizer`` rather than from the relevant ``Executor``.
+  The rest of the code still sees an executor-level future, but it happens to now come from the ``Memoizer`` rather than from the relevant ``Executor``.
 
-* if a task is actually run by an executor (because it was not available in the existing checkpoint database), then on completion (in ``DataFlowKernel.handle_app_update`` which is another callback, this time run when an AppFuture is completed) ``DataFlowKernel.checkpoint`` will be invoked to store the new result into the ``Memoizer`` and checkpoint database, at line 566 onwards: https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L566
+* if a task is actually run by an executor (because it was not available in the existing checkpoint database), then on completion (in ``DataFlowKernel.handle_app_update`` which is another callback, this time run when an AppFuture is completed) ``DataFlowKernel.checkpoint`` will be invoked to store the new result into the ``Memoizer`` and (depending on configuration) the checkpoint database, at `line 566 onwards <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L566>`_.
 
   .. warning::
     ``handle_app_update`` is a bit of a concurrency wart: because it runs in a callback associated with the AppFuture presented to a user, the code there won't necessarily run in any particular order wrt user code and so it can present some race conditions. This code could move into end-of-task completion handling elsewhere in the DFK, perhaps.
