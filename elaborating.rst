@@ -246,6 +246,8 @@ That's a common pattern in Parsl, and happens in at least these places:
 
 * Bash apps, which execute a unix command line, are mostly implemented by wrapping ``remote_side_bash_executor`` (in `parsl/app/bash.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/bash.py#L13>`_) around the user's Python app code. On the remote worker, that wrapper executes the user's Python app code to generate the command line to run, and then executes that as a unix command, turning the resulting unix exit code into an exception if necessary.
 
+  That means no part of Parsl apart from right at the start, the ``bash_app`` decorator and corresponding ``BashApp`` have any idea what a bash app is. The rest of Parsl just sees Python code like any other task.
+
 * When resource monitoring is turned on, the DFK wraps the users task in a monitoring wrapper at launch, at `parsl/dataflow/dflow.py line 74 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L747>`_. This wrapper starts a separate unix process that runs alongside the worker, sending information about resource usage (such as memory and CPU times) back to the monitoring system.
 
 * The python_app timeout parameter is implemented as a thread which injects an exception into an executing Python app when the timeout is reached. See `parsl/app/python.py line 18 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/python.py#L18>`_.
@@ -262,8 +264,6 @@ join_apps (dependencies at the end of a task?)
 
 * join_app joining - emphasise this as being quite similar to dependency handling.
 
-
-.. todo:: mention bash_apps which are a similar elaboration, but happen inside the bash_app decorator: beyond the decorator, no part of Parsl has any notion of a "bash app"
 
 .. todo:: gotta get a monad reference in here somehow, and a functional programming reference. something along the lines of "see also: the theory of monads in functional programming" with a link
 
