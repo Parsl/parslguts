@@ -126,7 +126,7 @@ The basic outline is:
 Modifying the arguments to a task
 ---------------------------------
 
-In the previous section I talked about choosing how many times to execute a task. In this section, I'll talk about modifying the task before executing it, driven by certain special kinds of arguments.
+In the previous section I talked about choosing how many times to execute a task, and maybe replacing the whole executor layer execution with something else. In this section, I'll talk about modifying the task before executing it, driven by certain special kinds of arguments.
 
 .. index:: TaskRecord; depends
 
