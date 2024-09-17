@@ -237,6 +237,10 @@ Rich dependency resolving
 .. note::
   Future development: these can look something like "build a sub-workflow that will replace this argument with the result of a sub-workflow" but not quite: file staging for example, has different modes for outputs, and sometimes replaces the task body with a new task body, rather than using a sub-workflow. Perhaps a more general "rewrite a task with different arguments, different dependencies, different body" model?
 
+.. index:: bash_app
+           timeout
+           monitoring; resource wrapper
+
 Wrapping tasks with more Python
 -------------------------------
 
@@ -246,7 +250,7 @@ That's a common pattern in Parsl, and happens in at least these places:
 
 * Bash apps, which execute a unix command line, are mostly implemented by wrapping ``remote_side_bash_executor`` (in `parsl/app/bash.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/bash.py#L13>`_) around the user's Python app code. On the remote worker, that wrapper executes the user's Python app code to generate the command line to run, and then executes that as a unix command, turning the resulting unix exit code into an exception if necessary.
 
-  That means no part of Parsl apart from right at the start, the ``bash_app`` decorator and corresponding ``BashApp`` have any idea what a bash app is. The rest of Parsl just sees Python code like any other task.
+  That means no part of Parsl apart from the ``bash_app`` decorator and corresponding ``BashApp`` have any idea what a bash app is. The rest of Parsl just sees Python code like any other task.
 
 * When resource monitoring is turned on, the DFK wraps the users task in a monitoring wrapper at launch, at `parsl/dataflow/dflow.py line 74 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L747>`_. This wrapper starts a separate unix process that runs alongside the worker, sending information about resource usage (such as memory and CPU times) back to the monitoring system.
 
@@ -258,12 +262,12 @@ That's a common pattern in Parsl, and happens in at least these places:
 
   This is one of the hardest (for me) conceptual problems with dealing generally with MPI. What does an MPI "run this command line on n ranks" task interface look like when we also want to say "run this arbitrary wrapped Python around a task"?
 
+.. index:: join_app
 
 join_apps (dependencies at the end of a task?)
 --------------------------------------------------------
 
-* join_app joining - emphasise this as being quite similar to dependency handling.
-
+join_app joining - emphasise this as being quite similar to dependency handling.
 
 .. todo:: gotta get a monad reference in here somehow, and a functional programming reference. something along the lines of "see also: the theory of monads in functional programming" with a link
 
