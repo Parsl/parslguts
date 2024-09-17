@@ -153,15 +153,32 @@ This happens in a few stages:
 * inside ``_launch_if_ready_async``, ``DataFlowKernel._count_deps`` loops over the Future objects in ``task_record['depends']`` and counts how many are not done. If there are any not-done futures, ``_launch_if_ready_async`` returns without launching:
 
   .. code-block:: python
-    :lineno-start: 304
+    :lineno-start: 655
+
+    if task_record['status'] != States.pending:
+      logger.debug(f"Task {task_id} is not pending, so launch_if_ready skipping")
+      return
 
     if self._count_deps(task_record['depends']) != 0:
       logger.debug(f"Task {task_id} has outstanding dependencies, so launch_if_ready skipping")
       return
 
+    # We can now launch the task or handle any dependency failures
+
+    new_args, kwargs, exceptions_tids = self._unwrap_futures(task_record['args'],
+                                                             task_record['kwargs'])
+
   So ``_launch_if_ready_async`` might run several times, once for every dependency ``Future`` that completes. When the final outstanding future completes, that final invocation of ``_launch_if_ready_async`` will see no outstanding dependencies - the task will be ready in the "launch if ready" sense.
 
-.. todo:: this doesn't talk about any substitution of the results for ``Future`` objects!
+  At that point, the DFK unwraps the values and/or errors in all of the dependency futures. ``_unwrap_futures`` takes the full set of arguments (as a sequence of positional arguments and a dictionary of keyword arguments) and replaces each ``Future`` with the value of that ``Future``. The arguments for the task are replaced with these unwrapped arguments.
+
+  It is possible that a ``Future`` contains an exception rather than a result, and these exceptions are returned as the third value, ``exceptions_tids``. If there are any exceptions here, that means one or more of the dependencies failed and we won't be able to execute this task. So the code marks that code as failed (in a ``dep_fail`` state to distinguish it from other failures).
+
+  Otherwise, task execution proceeds with this freshly modified task.
+
+  .. warning:: how can we meainingfully return new_args and kwargs if there were any exceptions?
+
+
 
 .. todo:: including rich dependency resolving - but that should be an onwards mention of plugin points? and a note about this being a common mistake. but complicated to implement because it needs to traverse arbitrary structures. which might give a bit of a tie-in to how ``id_for_memo`` works)
 
