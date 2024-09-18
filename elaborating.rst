@@ -254,7 +254,7 @@ That's a common pattern in Parsl, and happens in at least these places:
 
 * When resource monitoring is turned on, the DFK wraps the users task in a monitoring wrapper at launch, at `parsl/dataflow/dflow.py line 74 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L747>`_. This wrapper starts a separate unix process that runs alongside the worker, sending information about resource usage (such as memory and CPU times) back to the monitoring system.
 
-* The python_app timeout parameter is implemented as a thread which injects an exception into an executing Python app when the timeout is reached. See `parsl/app/python.py line 18 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/python.py#L18>`_.
+* The python_app timeout parameter is implemented as wrapper which starts a thread to injects an exception into an executing Python app when the timeout is reached. See `parsl/app/python.py line 18 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/python.py#L18>`_.
 
 * All apps are wrapped with ``wrap_error``. This wrapper (defined in `parsl/app/errors.py line 134 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/errors.py#L134>`_) catches exceptions raised by the user's app code and turns it into a  RemoteExceptionWrapper object. This is intended to make execution more robust when used with executors which do not properly handle exceptions in running tasks. The RemoteExceptionWrapper is unwrapped back into a Python exception as part of the Data Flow Kernel's result handling.
 
