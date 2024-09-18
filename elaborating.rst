@@ -266,6 +266,10 @@ That's a common pattern in Parsl, and happens in at least these places:
            Globus Compute
            sub-workflows
            monads
+           _parsl_internal executor
+           pair: Futures; serialization
+           TaskRecord; join
+           TaskRecord; joins
 
 Join apps: dependencies at the end of a task
 --------------------------------------------
@@ -276,7 +280,43 @@ The original idea for them was to allow "sub-workflows" to be launched as result
 
 Later on, it turned out they can be used to calls into other execution systems that return ``Future`` objects. For example, here's a blog post about `submitting into Globus Compute using join apps <http://parsl-project.org/2024/06/26/parsl-globus-compute.html>`_.
 
-.. todo:: join_app joining - emphasise this as being quite similar to dependency handling.
+Users make use of this by writing some Python code inside a join app that launches tasks and returns the Futures of those tasks. When this code finishes, the task enters a new state (not used for other apps) called ``joining`` which looks a bit like dependency handling, but at the result end of the task. Parsl will wait until all of the returned futures have completed and then return the contents of those futures as the result of the task.
+
+The ``join_app`` decorated is implemented as a variant of the ``python_app`` decorator that sets an additional bit to indicate it is a join app and forces execution to happen on the ``_parsl_internal`` thread pool executor.
+
+The user's app code is forced to execute onto the ``parsl_internal`` because it must run in the same process as the Data Flow Kernel: it wants wants submit tasks to the same Data Flow kernel or something else running in the main workflow process (rather than a limited worker environment) and ``Future`` objects don't make sense to move across the network between processes: they're a dynamic reflection of some local execution state.
+
+That join flag finds its way into the TaskRecord. It doesn't affect execution of the app until the code path in ``handle_exec_update`` which deals with successful task completion (at `parsl/dataflow/dflow.py line 134 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/errors.py#L134>`_).
+
+.. code-block:: python
+  :lineno-start: 134
+
+  if not task_record['join']:
+    self._complete_task(task_record, States.exec_done, res)
+    self._send_task_log_info(task_record)
+  else:
+    # This is a join task, and the original task's function code has
+    # completed. That means that the future returned by that code
+    # will be available inside the executor future, so we can now
+    # record the inner app ID in monitoring, and add a completion
+    # listener to that inner future.
+
+    joinable = future.result()
+
+    # Fail with a TypeError if the joinapp python body returned
+    # something we can't join on.
+    if isinstance(joinable, Future):
+      self.update_task_state(task_record, States.joining)
+      task_record['joins'] = joinable
+      task_record['join_lock'] = threading.Lock()
+      self._send_task_log_info(task_record)
+      joinable.add_done_callback(partial(self.handle_join_update, task_record))
+
+In the normal (non-join-app) case, that code will complete the task (for example by setting the ``AppFuture`` result. In the join case, the task instead goes into a new ``joining`` state, and further completion will happen in another callback, when the joinable Future is completed. There is another case right after to handle the app returning a list of Futures.
+
+That ``handle_join_update`` callback looks quite like dependency handling of ``launch_if_ready``: it will run once for each joinable Future, it checks if all the joinable Futures are completed, and moves the task onto the next state if so - in this case, marking the task as complete (vs the dependency behaviour of launching the task)
+
+.. todo:: earlier on there should be a state graph. then here the same graph with the joining state.
 
 .. seealso::
 
@@ -286,4 +326,4 @@ Later on, it turned out they can be used to calls into other execution systems t
 Putting these all together
 ==========================
 
-Summarise by me pointing out that in my mind (not necessarily in the architecture of Parsl) that from a core perspective these are all quite similar, even though the user effects are all very different. Which is a nice way to have an abstraction. And maybe that's an interesting forwards architecture for Parsl one day...
+.. todo:: Summarise by me pointing out that in my mind (not necessarily in the architecture of Parsl) that from a core perspective these are all quite similar, even though the user effects are all very different. Which is a nice way to have an abstraction. And maybe that's an interesting forwards architecture for Parsl one day...

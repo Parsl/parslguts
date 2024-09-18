@@ -123,6 +123,9 @@ dill and pickle will between them usually be able to serialize a function one wa
 
 subtleties of chosing between the two include where a file is imported from (so that dill might decide it is an installed library, which can be serialized as an ``import``, or might decide it is not an installed library but instead user code that it does not expect to be available remotely and so must be sent as bytecode)
 
+
+.. index:: Globus Compute
+
 Exceptions
 ==========
 
@@ -134,6 +137,14 @@ Custom classes are also usually sent by reference, in the same way that Python s
 
 .. todo:: i think there's a funcx approach to this that i could link to that turns exceptions into strings, which are basic pickle data types we should always be able to unpickle. see issue #3474. You lose the ability to catch specific exceptions (at least in the standard Python way).
 
+.. index:: pair: serialization; Futures 
+
+Some objects don't make sense to send to other places
+=====================================================
+
+.. todo:: objects that are in some sense "data like" make sense to pickle. some objects don't represent that - for example a Thread object represents a running thread in a particular Python process. Ask yourself what it means to pickle/unpickle that object into a different Python process, perhaps on a different machine? ``Future`` is another example of that, and maybe the most common to encounter when getting your head around launching tasks inside other tasks (see join apps)
+
+  in between there are more interesting objects that try to do interesting things with the serialization process .. proxystore is probably the most interesting example of that.
 
 TODOs
 =====
