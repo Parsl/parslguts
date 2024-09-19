@@ -58,28 +58,83 @@ Parsl propagates out those exceptions to the user in a future. But by that time 
 
 a simple policy: if i get a worker or manager failure, retry 3 times, because this might be transient. if i get a computation failure (let's say divide by zero) then do not retry because i expect this is "permanent". this is something that doesn't belong in the Parsl codebase: it is application specific behaviour. So we're using plugin concept here to allow users to attach their application code into parsl in a way that cannot be done through the main task interface.
 
+
+.. index:: checkpointing; id_for_memo
+           id_for_memo
+
 All the plugin points I can think of
 ====================================
 
 .. todo:: for each, a sentence or two, and a source code reference
 
-* executors
+* executors - you've got a function and arguments and want to run the function with the arguments. but probably somewhere else, queued or managed in some way. That's what an executor does, by providing the DataFlowKernel with a submit call:
 
-* providers
+  https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/base.py#L80
+
+  .. code-block:: python
+    :lineno-start: 80
+
+    @abstractmethod
+      def submit(self, func: Callable, resource_specification: Dict[str, Any], *args: Any, **kwargs: Any) -> Future:
+
+* providers - addressed in previous section
 
 * launchers
 
 * (scheduled for removal) Channels - so I won't describe them
 
-* retry handlers
+* retry handlers - this is a place to encapsulate user knowledge about if a task should be retried, and if so how much. By default the cost of a task retry is 1 unit.
 
-* memoizer key calculator (id_for_memo) (ref back to `elaborating`)
+  https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/config.py#L113
 
-* file staging (ref back to `elaborating`)
+  retry_handler: Optional[Callable[[Exception, TaskRecord], float]] 
+
+  A retry handler is a function like this:
+
+  .. code-block:: python
+
+    def my_retry_handler(e: Exception, t: TaskRecord) -> float:
+
+  which is called by the Data Flow Kernel when a task execution fails. It can look at both the exception from that failing task execution, and at ``TaskRecord`` (including the function and arguments) and decide in some application specific way how much this should cost.
+
+  The standard example here is distinguishing between exceptions that might be worth retrying (such as a crashed worker) and exceptions that are less likely to succeed if run a second time (for example, some application reported calculation error)
+ 
+* memoizer key calculator (id_for_memo)
+
+  When checkpointing to disk (as mentioned in `elaborating`), Parsl stores a record for each task that has been completed. Each task is identified by a hash of the task arguments (and some other stuff). On a re-run, the task is hashed again and that hash is looked up in the checkpoint database. It isn't possible to compute a meaningful equality-like hash for arbitrary Python objects. Parsl uses a single dispatch function ``id_for_memo`` to compute meaningful equality hashes for several built-in Python types, and this is the way to plug in hash computation for other types. 
+
+  Here's an example from `parsl/dataflow/memorization at line 61 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/memoization.py#L61>`_ which recursively defines how to hash a list. ``id_for_memo.register`` can be called a user workflow script to register more types.
+
+
+  .. code-block:: python
+    :lineno-start: 61
+
+    @id_for_memo.register(list)
+    def id_for_memo_list(denormalized_list: list, output_ref: bool = False) -> bytes:
+      if type(denormalized_list) is not list:
+          raise ValueError("id_for_memo_list cannot work on subclasses of list")
+
+      normalized_list = []
+
+      for e in denormalized_list:
+        normalized_list.append(id_for_memo(e, output_ref=output_ref))
+
+      return pickle.dumps(normalized_list)
+
+* file staging
+
+  I talked about file staging in `elaborating`, with staging providers allowed to launch new tasks and replace the body function of a task. The ``Staging`` interface in `parsl/data_provider/staging.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/data_provider/staging.py>`_  provides methods to do that.
 
 * default stdout/stderr name generation
 
-* rich dependency (ref back to `elaborating`)
+* Rich dependency handling
+
+  Sometimes it is nice to pass arguments that are structures which contain futures, rather than the argument directly being Futures - for example, a list or dictionary of futures. Parsl's default dependency handling won't see those futures hidden inside other structures, and so will neither wait for them to be ready, not substitute in their values.
+
+  Parsl's dependency resolver hook lets you add in richer dependency handling by substituting in your own code to find and replace Futures inside task arguments. As an example, the ``DEEP_DEPENDENCY_RESOLVER`` defined in `parsl/dataflow/dependency_resolvers.py line 111 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dependency_resolvers.py#L111>`_ provides an implementation which can be extended by type (like ``id_for_memo`` above).
+
+
+  .. todo:: ref back to `elaborating` if I write that section
 
 * serialization - although as hinted at in `pickle`, Pickle is also extensible and that is usually the place to plug in hooks.
 

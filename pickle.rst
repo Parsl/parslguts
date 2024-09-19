@@ -11,7 +11,7 @@ Some of the places this happens:
 
 .. index:: pair: checkpointing; serialization
 
-* Storing results in the checkpoint database, to be loaded by a later Python process.
+* Storing results in the checkpoint database, to be loaded by a later Python process, and also in computing object equality for looking up checkpoint results.
 
 * Sending monitoring messages
 
