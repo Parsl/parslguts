@@ -4,16 +4,53 @@ Modularity and Plugins
 Motivation
 ==========
 
+why
+---
 
-An example - providers
-======================
+Parsl exists as a library within the python ecosystem. Python *exists* as a user-facing language, not an internal implementation language. Our users are generally Python users (of varying degree of experience) and we can make use of that fact.
+
+structuring of code within the parsl github repo.
+"why" includes sustainability work on different quality of code/maintenance. different quality includes things like "this piece of code is well tested, or tested by this environment". different levels of support for different contributions.
+
+it's also a place to plug in "policies" - that is user-specified decisions (such as how to retry, using retry handlers) that take into account the ability of our users to write Python code as policy specifications.
+
+place for supporting other non-core uses: for example Globus Compute makes use of the plugin API to use only htex and the lrm provider parts of Parsl, and can do that because of the plugin API, where it becomes its own plugin host for the relevant plugins.
+
+place for research/hacking - eg. want to do some research on doing X with workflows. Parsl has a role there as being the workflow system that exists that you can then modify to try out X, rather than writing your own toy workflow system. want to try out an idea. (example for parslfest: matthew chungs work involved very minimal changes to Parsl - including a new plugin interface! - for a nice outcome). two things there: beneficial for the code to be modular (even within the same repo) so that you only need to understand the pieces you want to hack on, with less understanding needed of less relevant parts. ability to share add-ons without people having to patch parsl (although in reality that doesn't really happen)
+
+how
+---
+
+if there's a decision point that looks like a multi-way if statement - having a bunch of choices is a suggestion that choices you might not have implemented might also exist, and someone might want to put those in. various plugin points then look like "expandable if" statements. a good contrast is the launcher plugin interface, vs the hard-coded MPI plugin interface (cross reference issue to fix that), described in the context of pluggability and needing to modify parsl source code.
+
+use the phrase "dependency injection"
+
+rest
+----
+
+this is an architectural style rather than an API
+
+there have been a few places in earlier sections where i have talked (in different ways) about plugging in different pieces of code - the biggest examples being providers and executors.
+
+The big examples that lots of people encounter for this section are providers, because this is a big part of describing the unique environment of each different system; and executors, because one of the ways that other research groups like to collaborate with big code chunks is by Contributing interfaces so Parsl's DFK layer can submit to their own execution system rather than using the High Throughput Executor. The biggest example of that is Work Queue, but there are several other executors in the codebase.
+
+Doing that sort of stuff is what I'd expect as part of moving from being a tutorial-level user to a power user.
+
+.. index:: providers
+
+An example: providers
+=====================
+
+[modulariy example] In the blocks section, (TODO crossref) I showed how different environments need different providers and launchers, but that the scaling code doesn't care about how those providers and launchers do their work. This interface is a straightforward way to add support for new batch systems, either in the Parsl codebase itself, or following the interface but defined outside of the Parsl codebase.
 
 who cares about what
 
 the API
 
-An example - retry policies
-===========================
+.. index:: retries; policy
+
+An example: retry policies
+==========================
 
 Python exceptions - a user knows more about the exceptions than infrastructure does. That's why Python lets you catch certain exceptions and deal with them in different ways.
 
@@ -21,10 +58,10 @@ Parsl propagates out those exceptions to the user in a future. But by that time 
 
 a simple policy: if i get a worker or manager failure, retry 3 times, because this might be transient. if i get a computation failure (let's say divide by zero) then do not retry because i expect this is "permanent". this is something that doesn't belong in the Parsl codebase: it is application specific behaviour. So we're using plugin concept here to allow users to attach their application code into parsl in a way that cannot be done through the main task interface.
 
-Run through of all the plugin points I can think of
-===================================================
+All the plugin points I can think of
+====================================
 
-for each, a sentence or two, and a source code reference
+.. todo:: for each, a sentence or two, and a source code reference
 
 * executors
 
@@ -46,36 +83,4 @@ for each, a sentence or two, and a source code reference
 
 * serialization - although as hinted at in `pickle`, Pickle is also extensible and that is usually the place to plug in hooks.
 
-TODO
-====
 
-this is an architectural style rather than an API
-
-
-there have been a few places in earlier sections where i have talked (in different ways) about plugging in different pieces of code - the biggest examples being providers and executors.
-
-which bits you can swap for other plugins: how and why
-
-The big examples that lots of people encounter for this section are providers, because this is a big part of describing the unique environment of each different system; and executors, because one of the ways that other research groups like to collaborate with big code chunks is by Contributing interfaces so Parsl's DFK layer can submit to their own execution system rather than using the High Throughput Executor. The biggest example of that is Work Queue, but there are several other executors in the codebase.
-
-structuring of code within the parsl github repo.
-"why" includes sustainability work on different quality of code/maintenance
-
-In the blocks section, (TODO crossref) I showed how different environments need different providers and launchers, but that the scaling code doesn't care about how those providers and launchers do their work. This interface is a straightforward way to add support for new batch systems, either in the Parsl codebase itself, or following the interface but defined outside of the Parsl codebase.
-
-
-if there's a decision point that looks like a multi-way if statement - having a bunch of choices is a suggestion that choices you might not have implemented might also exist, and someone might want to put those in. various plugin points then look like "expandable if" statements. a good contrast is the launcher plugin interface, vs the hard-coded MPI plugin interface (cross reference issue to fix that)
-
-it's also a place to plug in "policies" - that is user-specified decisions (such as how to retry, using retry handlers) that take into account the ability of our users to write Python code as policy specifications.
-
-Parsl exists as a library within the python ecosystem. Python *exists* as a user-facing language, not an internal implementation language. Our users are generally Python users (of varying degree of experience) and we can make use of that fact.
-
-Doing that sort of stuff is what I'd expect as part of moving from being a tutorial-level user to a power user.
-
-place for research/hacking - eg. want to do some research on doing X with workflows. Parsl has a role there as being the workflow system that exists that you can then modify to try out X, rather than writing your own toy workflow system. want to try out an idea. (example for parslfest: matthew chungs work involved very minimal changes to Parsl - including a new plugin interface! - for a nice outcome)
-
-place for power users - see policies and decision points paragraph
-
-place for supporting other non-core uses: for example Globus Compute makes use of the plugin API to use only htex and the lrm provider parts of Parsl, and can do that because of the plugin API, where it becomes its own plugin host for the relevant plugins.
-
-use the phrase "dependency injection"
