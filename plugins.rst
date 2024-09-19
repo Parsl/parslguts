@@ -77,6 +77,8 @@ All the plugin points I can think of
     @abstractmethod
       def submit(self, func: Callable, resource_specification: Dict[str, Any], *args: Any, **kwargs: Any) -> Future:
 
+  The big example here is using Work Queue to get access to work queue's resource allocation language which is much more expressive than the high throughput executor's worker slot mechanism. There are other executors here too though, built on radical pilot, flux, and task vine.
+
 * providers - addressed in previous section
 
 * launchers
