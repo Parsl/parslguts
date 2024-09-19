@@ -25,7 +25,7 @@ This is nothing fancy: there's a config in my preferred style, with almost every
 
 I'm going to ignore quite a lot, though: the startup/shutdown process (what happens with parsl.load() and what happens at the end of the ``with`` block); I'm going to defer batch system interactions to the `blocks chapter <blocks>`, and this example avoids many of Parsl's workflow features which I will cover in the `task elaboration chapter <elaborating>`.
 
-.. index:: python_app, Python apps, decorators
+.. index:: python_app, Python apps, decorators, apps; python
 
 Defining a ``python_app``
 =========================

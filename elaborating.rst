@@ -240,6 +240,7 @@ Rich dependency resolving
 .. index:: bash_app
            timeout
            monitoring; resource wrapper
+           apps; bash
 
 Wrapping tasks with more Python
 -------------------------------
@@ -270,6 +271,7 @@ That's a common pattern in Parsl, and happens in at least these places:
            pair: Futures; serialization
            TaskRecord; join
            TaskRecord; joins
+           apps; join
 
 Join apps: dependencies at the end of a task
 --------------------------------------------
