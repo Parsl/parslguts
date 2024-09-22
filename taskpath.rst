@@ -204,9 +204,7 @@ Usually, one copy of the process worker pool runs on each worker node, although 
 
 .. todo:: link to worker pool code that calculates number of workers
 
-The task arrives at the manager, and the manager dispatches it to a free worker. it is possible there isnt' a free worker, becuase of the preloading feature for high throughput - and the task will have to wait in another queue here - but that is a rarely used feature.
-
-.. todo:: link to docstring of preload parameter
+The task arrives at the manager, and the manager dispatches it to a free worker. It is possible there isn't a free worker, becuase of the `pre-fetch feature <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/executor.py#L113>`_ which can help in high throughput situations. The task will have to wait in another queue here - ready to start execution when a worker becomes free, without any more network activity.
 
 the worker then deserialises the byte package that was originally serialized all the way back in the user submit process: we've got python objects for the function to run, the positional arguments and the keyword arguments.
 
