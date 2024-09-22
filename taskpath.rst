@@ -1,3 +1,5 @@
+.. index:: user workflow process
+
 A sample task execution path
 ############################
 
@@ -24,6 +26,8 @@ Here's a simple workflow that you can run on a single computer. I'll point out a
 This is nothing fancy: there's a config in my preferred style, with almost every parameter getting a suitable default value. All that is changed is to use the High Throughput Executor, rather than the default (and boring) Thread Pool Executor.
 
 I'm going to ignore quite a lot, though: the startup/shutdown process (what happens with parsl.load() and what happens at the end of the ``with`` block); I'm going to defer batch system interactions to the `blocks chapter <blocks>`, and this example avoids many of Parsl's workflow features which I will cover in the `task elaboration chapter <elaborating>`.
+
+I'm going to call the Unix/Python process where this code runs, the user workflow process. There will be quite a lot of other processes involved, which I will cover as needed.
 
 .. index:: python_app, Python apps, decorators, apps; python
 
@@ -153,9 +157,7 @@ The data flow kernel will have performed some initialization on the high through
 
 .. todo:: perhaps this initialization code is in enough of one place to link to in the DFK code?
 
-htex consists of a small part that runs in the user workflow process 
-
-.. todo:: do I need to defined "user workflow process " earlier on in this chapter? it's somethat that should be defined and perhaps there should be a glossary or index for this document for terms like that?) and several other processes. 
+The High Throughput Executor consists of a small part that runs in the user workflow process and then quite a lot of other processes.
 
 The first process in the interchange, defined in `parsl/executors/high_throughput/interchange.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/interchange.py>`_. This runs on the same host as the user workflow process and offloads task and result queues.
 
