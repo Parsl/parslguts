@@ -200,9 +200,7 @@ Usually, one copy of the process worker pool runs on each worker node, although 
 
 * The manager process which interfaces to the interchange (this is why you'll see a jumble of references to managers or worker pools in the code: the manager is the externally facing interface to the worker pool)
 
-* Several worker processes - each worker process is a worker. There are a bunch of configuration parameters and algorithms to decide how many workers to run - this happens near the start of the process worker pool process in the manager code. There is one worker per simultaneous task, so usually one per core or one per node (depending on application preference).
-
-.. todo:: link to worker pool code that calculates number of workers
+* Several worker processes - each worker process is a worker. There are a bunch of configuration parameters and heuristics to decide how many workers to run - this happens near the start of the process worker pool process at `parsl/executors/high_throughput/process_worker_pool.py line 210 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/process_worker_pool.py#L210>`_. There is one worker per simultaneous task, so usually one per core or one per node (depending on application preference).
 
 The task arrives at the manager, and the manager dispatches it to a free worker. It is possible there isn't a free worker, becuase of the `pre-fetch feature <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/executor.py#L113>`_ which can help in high throughput situations. The task will have to wait in another queue here - ready to start execution when a worker becomes free, without any more network activity.
 
