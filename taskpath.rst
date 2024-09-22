@@ -102,8 +102,6 @@ The ``PythonApp`` implementation of ``__call__`` doesn't do too much: it massage
 
 The most important parameters to see are the function to execute, stored in ``func`` and the arguments in ``app_args`` (a list of positional arguments) and ``app_kwargs`` (a ``dict`` of keyword arguments). Those three things are what we will need later on to invoke our function somewhere else, and a lot of the rest of task flow is about moving these around and sometimes changing them.
 
-.. todo:: some different syntax highlighting/background to indicate this is from Parsl source code?
-
 .. seealso::
 
      Magic methods surrounded by double underscores are the standard Python way to make arbitrary classes customize standard Python behaviour. The most common one is probably ``__repr__`` which allows a class to define how it is rendered as a string. There are lots of others documented in the `Python data model <https://docs.python.org/3/reference/datamodel.html>`_.
