@@ -1,4 +1,5 @@
-.. index:: SQL, monitoring
+.. index:: SQL, monitoring, SQLite, SQLite
+           library; sqlite3
 
 Understanding the monitoring database
 #####################################
@@ -6,14 +7,47 @@ Understanding the monitoring database
 Parsl can store information about workflow execution into an `SQLite database <https://www.sqlite.org/>`_. Then you can look at the information, in a few different ways.
 
 .. index:: monitoring; configuration
+           MonitoringHub
 
-turning on monitoring
+Turning on monitoring
 =====================
 
-.. todo:: this section should show a simple configuration
+Here's the workflow used in `taskpath`, but with monitoring turned on:
 
-how to look at information
-==========================
+.. code-block:: python
+  :emphasize-lines: 6,14
+
+  import parsl
+
+  def fresh_config():
+    return parsl.Config(
+      executors=[parsl.HighThroughputExecutor()],
+      monitoring=parsl.MonitoringHub(hub_address = "localhost")
+    )
+
+  @parsl.python_app
+  def add(x: int, y: int) -> int:
+    return x+y
+
+  with parsl.load(fresh_config()):
+    print(twice(add(5,3)).result())
+
+Compared to the earlier version, the changes are adding ``monitoring=`` parameter to the Parsl configuration, and adding an additional app ``twice`` to make the workflow a bit more interesting.
+
+After running this, you should see a new file, ``runinfo/monitoring.db``:
+
+.. code-block::
+
+  $ ls runinfo/
+  000
+  monitoring.db
+
+This new file is an SQLite database shared between all workflow runs that use the same ``runinfo/`` directory.
+
+Using monitoring information
+============================
+
+There are two main approaches to looking at the monitoring database: the prototype ``parsl-visualize`` tool, and Python data analysis.
 
 .. index:: parsl-visualize
            monitoring; parsl-visualize
@@ -21,16 +55,37 @@ how to look at information
 parsl-visualize web UI
 ----------------------
 
-Parsl comes with a prototype visualizer for the monitoring database.
+Parsl comes with a prototype browser-based visualizer for the monitoring database.
 
-Here's a screenshot:
+Start it like this, and then point your browser at the given URL.
 
-.. todo:: this should be a couple of screenshot and not much else
+.. code-block::
 
-programmatic access
--------------------
+  $ parsl-visualize 
+   * Serving Flask app 'parsl.monitoring.visualization.app'
+   * Debug mode: off
+  WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+   * Running on http://127.0.0.1:8080
+  Press CTRL+C to quit
 
-I usually use SQL, but Parsl users are usually more familiar with data processing in Python: you can load the database tables into Pandas data frames and do data frame stuff there.
+
+
+Here's a screenshot, showing the above two-task workflow spending most of its 5 second run with the ``add`` task in ``launched`` state (waiting for a worker to be ready to run it), and the ``twice`` task in ``pending`` state (waiting for the ``add`` task to complete).
+
+.. image:: monitoring_wf.png
+  :width: 400
+  :alt: browser screenshot with some workflow statistics and two coloured bars for task progress
+
+I'm not going to go further into ``parsl-visualize`` but you can run your own workflows and click around to explore.
+
+.. index:: pandas
+           monitoring; pandas
+           library; pandas
+
+Using data frames
+-----------------
+
+A different approach preferred by many data-literate Parsl users is to treat monitoring data like any other Python data, using Pandas.
 
 .. todo:: one example of non-plot (count tasks?)
 
@@ -47,23 +102,23 @@ The monitoring database SQL schema is defined using SQLAlchemy's ORM model at:
 
 https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/monitoring/db_manager.py#L132
 
-.. warning:: and the schema is defined again at https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/monitoring/visualization/models.py#L12 -- see issue https://github.com/Parsl/parsl/issues/2266
+.. warning:: The schema is defined a second time in `parsl/monitoring/visualization/models.py line 12 onwards <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/monitoring/visualization/models.py#L12>`_. See `issue #2266 <https://github.com/Parsl/parsl/issues/2266>`_ for more discussion.
 
 These tables are defined:
 
 .. todo:: the core task-related tables can get a hierarchical diagram workflow/task/try+state/resource
 
-* workflow - each workflow run gets a row in this table. A workflow run is one call to ``parsl.load()`` with monitoring enabled, and everything that happens inside that initialized Parsl instance.
+* ``workflow`` - each workflow run gets a row in this table. A workflow run is one call to ``parsl.load()`` with monitoring enabled, and everything that happens inside that initialized Parsl instance.
 
-* task - each task (so each invocation of a decorated app) gets a row in this table
+* ``task`` - each task (so each invocation of a decorated app) gets a row in this table
 
-* try - if/when Parsl tries to execute a task, the try will get a row in this table. As mentioned in `elaborating`, there might not be any tries, or there might be many tries.
+* ``try`` - if/when Parsl tries to execute a task, the try will get a row in this table. As mentioned in `elaborating`, there might not be any tries, or there might be many tries.
 
-* status - this records the changes of task status, which include changes known on the submit side (in ``TaskRecord``) and changes which are not otherwise known to the submit side: when a task starts and ends running on a worker. You'll see ``running`` and ``running_ended`` states in this table which will never appear in the ``TaskRecord``. One ``task`` row may have many ``status`` rows.
+* ``status`` - this records the changes of task status, which include changes known on the submit side (in ``TaskRecord``) and changes which are not otherwise known to the submit side: when a task starts and ends running on a worker. You'll see ``running`` and ``running_ended`` states in this table which will never appear in the ``TaskRecord``. One ``task`` row may have many ``status`` rows.
 
-* resource - if Parsl resource monitoring is turned on (TODO: how?), a sub-mode of Parsl monitoring in general, then a resource monitor process will be placed alongside the task (see `elaborating`) which will report things like CPU time and memory usage periodically. Those reports will be stored in the resource table. So a try of a task may have many resource table rows.
+* ``resource`` - if Parsl resource monitoring is turned on (TODO: how?), a sub-mode of Parsl monitoring in general, then a resource monitor process will be placed alongside the task (see `elaborating`) which will report things like CPU time and memory usage periodically. Those reports will be stored in the resource table. So a try of a task may have many resource table rows.
 
-* block - when the scaling code starts or ends a block, or asks for status of a block, it stores any changes into this table. If enough monitoring is turned on, the block where a try runs will be stored in the relevant ``try`` table row.
+* ``block`` - when the scaling code starts or ends a block, or asks for status of a block, it stores any changes into this table. If enough monitoring is turned on, the block where a try runs will be stored in the relevant ``try`` table row.
 
-* node - this one is populated with information about connected worker pools with htex (and not at all with other executors), populated by the interchange when a pool registers or when it changes status (disconnects, is set to holding, etc)
+* ``node`` - this one is populated with information about connected worker pools with htex (and not at all with other executors), populated by the interchange when a pool registers or when it changes status (disconnects, is set to holding, etc)
 
