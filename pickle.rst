@@ -21,18 +21,11 @@ A lot of the time, this works pretty transparently and doesn't need much thought
 
 But, there are several situations in Parsl where there are complications, and it can help to have some understanding of what is happening inside ``pickle`` when trying to debug things - rather than trying to regard ``pickle`` as a closed magical library.
 
-
-.. todo:: an emphasis on the common parsl problems: (un)installed packages, functions and exceptions
-
 intro should refer to not regarding this as magic, despite most people desperately hoping it is magic and then not trying to understand whats happening. this is needs a bit of programming language thinking, way more than routing "tasks as quasi-commandlines"
 
-I'll use the term pickling and serializing fairly interchangeably: serialization is the general word for turning something like an object (or graph of objects) into a stream of bytes. Pickling is a more specific form, using Python's built in ``pickle`` library.
+I'll use the term pickling and serializing fairly interchangeably: serialization is the general word for turning something like an object (or graph of objects) into a stream of bytes. Pickling is a more specific form, using Python's built in `Pickle library <https://docs.python.org/3/library/pickle.html>`_.
 
-.. todo:: hyperlink pickle in python docs
-
-As I mentioned in an earlier section, when htex wants to send a function invocation to a worker, it serializes the function and its arguments into a byte sequence, and routes that to a worker, where that byte sequence is turned back into objects that are in some sense equivalent to the original objects. Task results follow a similar path, in reverse.
-
-.. todo:: hyperlink back to "an earlier section"
+As I mentioned in `taskpath`, when the High Throughput Executor wants to send a function invocation to a worker, it serializes the function and its arguments into a byte sequence, and routes that to a worker, where that byte sequence is turned back into objects that are in some sense equivalent to the original objects. Task results follow a similar path, in reverse.
 
 That serialization is actually mostly pluggable, but basically everyone uses some variant of pickle (most often the dill library) because that's the default and there isn't much reason to change.
 
@@ -42,6 +35,8 @@ There are a few areas where it helps to have some deeper understanding of whats 
 
 Tiny pickle tutorial
 ====================
+
+This is a simple example of Pickle that is enough for most use cases: one function ``dumps`` turns a fairly arbitrary Python object into a byte sequence, and another ``loads`` turns it back into an object again. The point of doing this is that moving a byte sequence around is a much clearer, more flexible operation than sending an arbitrary object around.
 
 .. code-block:: python
 
@@ -144,24 +139,16 @@ Some objects don't make sense to send to other places
 
 .. todo:: objects that are in some sense "data like" make sense to pickle. some objects don't represent that - for example a Thread object represents a running thread in a particular Python process. Ask yourself what it means to pickle/unpickle that object into a different Python process, perhaps on a different machine? ``Future`` is another example of that, and maybe the most common to encounter when getting your head around launching tasks inside other tasks (see join apps)
 
-  in between there are more interesting objects that try to do interesting things with the serialization process .. proxystore is probably the most interesting example of that.
+  in between there are more interesting objects that try to do interesting things with the serialization process .. `ProxyStore <https://docs.proxystore.dev/latest/>`_ is probably the most interesting example of that.
 
 TODOs
 =====
-
-.. todo:: review my pickle talk, figure out what is relevant or not. maybe don't need to talk about pickle VM opcodes, just the remote-execution facility at a higher level? and the import facility at a higher level? no need to talk about recursive objects - that's not a user facing problem (unless you're trying to build your own pickle scheme)
 
 .. todo:: also mention cloudpickle as a dill-like pickle extension. They are both installable alongside each other... and people mostly haven't given me decent argumetns for cloudpickle because people don't dig much into understanding whats going on.
 
 .. todo:: note that checkpointing results are stored using pickle - so this is not only about sending things across the wire (in space) but also to future runs of a checkpointed workflow (in time).
 
 .. seealso::
-  I've talked about Pickle in more depth and outside of the Parsl context at PyCon Lithuania
-
-  .. todo:: link slides and video
-
-  Proxystore - reference its use in Parsl, and reference a citation for just proxystore.
-
-  .. todo:: link proxystore
+  I've talked about Pickle in more depth and outside of the Parsl context at PyCon Lithuania: `The Ghosts of Distant Objects <https://pycon.lt/2024/talks/YUXXZS>`_
 
   Serialising functions is a hard part of programming languages, especially in a language that wasn't designed for this, and parsl is constantly pushing up against those limits. have a look at https://www.unison-lang.org/ if you're interested in languages which are trying to do this from the start.
