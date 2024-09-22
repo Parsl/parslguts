@@ -140,13 +140,11 @@ Custom classes are also usually sent by reference, in the same way that Python s
 Some objects don't make sense to send to other places
 =====================================================
 
-.. todo::
+Objects that are "data like" make sense to pickle. An intuitive way to think about "data like" is "could you write down the value of the object on a piece of paper?".
 
-  Objects that are in some sense "data like" make sense to pickle. An intuitive way to think about "data like" is "could you write down the value of the object on a piece of paper?".
+Some objects don't represent that - for example a Thread object represents a running thread in a particular Python process. Ask yourself what it means to pickle/unpickle that object into a different Python process, perhaps on a different machine? ``Future`` is another example of that, and maybe the most common to encounter when getting your head around launching tasks inside other tasks (see join apps)
 
-  Some objects don't represent that - for example a Thread object represents a running thread in a particular Python process. Ask yourself what it means to pickle/unpickle that object into a different Python process, perhaps on a different machine? ``Future`` is another example of that, and maybe the most common to encounter when getting your head around launching tasks inside other tasks (see join apps)
-
-  In between there are more interesting objects that try to do interesting things with the serialization process .. `ProxyStore <https://docs.proxystore.dev/latest/>`_ is probably the most interesting example of that.
+In between there are more interesting objects that try to do interesting things with the serialization process .. `ProxyStore <https://docs.proxystore.dev/latest/>`_ is probably the most interesting example of that.
 
 .. seealso::
   I've talked about Pickle in more depth and outside of the Parsl context at PyCon Lithuania: `The Ghosts of Distant Objects <https://pycon.lt/2024/talks/YUXXZS>`_
