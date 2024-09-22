@@ -118,6 +118,8 @@ dill and pickle will between them usually be able to serialize a function one wa
 
 subtleties of chosing between the two include where a file is imported from (so that dill might decide it is an installed library, which can be serialized as an ``import``, or might decide it is not an installed library but instead user code that it does not expect to be available remotely and so must be sent as bytecode)
 
+.. todo:: also mention cloudpickle as a dill-like pickle extension. They are both installable alongside each other... and people mostly haven't given me decent argumetns for cloudpickle because people don't dig much into understanding whats going on.
+
 
 .. index:: Globus Compute
 
@@ -143,8 +145,6 @@ Some objects don't make sense to send to other places
 
 TODOs
 =====
-
-.. todo:: also mention cloudpickle as a dill-like pickle extension. They are both installable alongside each other... and people mostly haven't given me decent argumetns for cloudpickle because people don't dig much into understanding whats going on.
 
 .. todo:: note that checkpointing results are stored using pickle - so this is not only about sending things across the wire (in space) but also to future runs of a checkpointed workflow (in time).
 
