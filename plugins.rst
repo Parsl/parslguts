@@ -41,7 +41,7 @@ Doing that sort of stuff is what I'd expect as part of moving from being a tutor
 An example: providers
 =====================
 
-[modulariy example] In the blocks section, (TODO crossref) I showed how different environments need different providers and launchers, but that the scaling code doesn't care about how those providers and launchers do their work. This interface is a straightforward way to add support for new batch systems, either in the Parsl codebase itself, or following the interface but defined outside of the Parsl codebase.
+[modularity example] In the blocks section, (TODO crossref) I showed how different environments need different providers and launchers, but that the scaling code doesn't care about how those providers and launchers do their work. This interface is a straightforward way to add support for new batch systems, either in the Parsl codebase itself, or following the interface but defined outside of the Parsl codebase.
 
 who cares about what
 
@@ -54,7 +54,7 @@ An example: retry policies
 
 Python exceptions - a user knows more about the exceptions than infrastructure does. That's why Python lets you catch certain exceptions and deal with them in different ways.
 
-Parsl propagates out those exceptions to the user in a future. But by that time it's too late to influence retries.
+Parsl propagates those exceptions to the user via the relevant ``AppFuture``, but by that time it's too late to influence retries.
 
 a simple policy: if i get a worker or manager failure, retry 3 times, because this might be transient. if i get a computation failure (let's say divide by zero) then do not retry because i expect this is "permanent". this is something that doesn't belong in the Parsl codebase: it is application specific behaviour. So we're using plugin concept here to allow users to attach their application code into parsl in a way that cannot be done through the main task interface.
 
