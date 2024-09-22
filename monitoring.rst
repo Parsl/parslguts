@@ -15,7 +15,7 @@ Turning on monitoring
 Here's the workflow used in `taskpath`, but with monitoring turned on:
 
 .. code-block:: python
-  :emphasize-lines: 6,14
+  :emphasize-lines: 6,13-15,18
 
   import parsl
 
@@ -28,6 +28,10 @@ Here's the workflow used in `taskpath`, but with monitoring turned on:
   @parsl.python_app
   def add(x: int, y: int) -> int:
     return x+y
+
+  @parsl.python_app
+  def twice(x: int) -> int:
+    return 2*x
 
   with parsl.load(fresh_config()):
     print(twice(add(5,3)).result())
@@ -85,7 +89,7 @@ I'm not going to go further into ``parsl-visualize`` but you can run your own wo
 Using data frames
 -----------------
 
-A different approach preferred by many data-literate Parsl users is to treat monitoring data like any other Python data, using Pandas.
+A different approach preferred by many data-literate users is to treat monitoring data like any other Python data, using Pandas.
 
 .. todo:: one example of non-plot (count tasks?)
 
