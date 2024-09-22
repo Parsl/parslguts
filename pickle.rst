@@ -129,7 +129,7 @@ Exceptions
 
 The big deal here is with trying to use package specific classes, only having them installed on the remote side, but then not realising that an exception being raised is also a package specific class.
 
-Environments have to be consistent all over. That doesn't mean they have to be identicaly. But problems arise when people try to use insufficiently consistent environments: things work OK most of the time because no "worker side only" objects are sent around,
+Environments have to be consistent all over. That doesn't mean they have to be identical. But problems arise when people try to use insufficiently consistent environments: things work OK most of the time because no "worker side only" objects are sent around,
 
 Custom classes are also usually sent by reference, in the same way that Python sends functions.
 
