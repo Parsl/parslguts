@@ -148,9 +148,6 @@ Some objects don't make sense to send to other places
 
   In between there are more interesting objects that try to do interesting things with the serialization process .. `ProxyStore <https://docs.proxystore.dev/latest/>`_ is probably the most interesting example of that.
 
-TODOs
-=====
-
 .. seealso::
   I've talked about Pickle in more depth and outside of the Parsl context at PyCon Lithuania: `The Ghosts of Distant Objects <https://pycon.lt/2024/talks/YUXXZS>`_
 
