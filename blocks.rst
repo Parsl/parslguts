@@ -123,7 +123,7 @@ There is a ``parallelism`` parameter (where?), to allow users to control the rat
 
 .. warning::
 
-   Question: what does init_blocks mean in this context? start i blocks then immediately scale (up or down) to the needed number of blocks?
+   Question: what does init_blocks mean in this context? Start ``init_blocks`` blocks then immediately scale (up or down) to the needed number of blocks?
 
 .. index:: htex_auto_scale
            High Throughput Executor; htex_auto_scale
