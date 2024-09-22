@@ -11,11 +11,12 @@ Some of the places this happens:
 
 .. index:: pair: checkpointing; serialization
 
-* Storing results in the checkpoint database, to be loaded by a later Python process, and also in computing object equality for looking up checkpoint results.
+* Storing results in the checkpoint database, to be loaded by a later Python process, and also in computing object equality for looking up checkpoint results - see `elaborating`.
 
 * Sending monitoring messages
 
 * Communication between some different Python processes - both high throughput executor and the monitoring system involve multiple processes, and they often send each other objects (often dictionaries) over network and interprocess communication. Sometimes without it being explicit (for example, Python's ``multiprocessing`` library makes heavy use of ``pickle``). ZMQ's send_pyobj / recv_pyobj uses ``pickle`` to turn the relevant Python object into a bytestream that can be sent over ZMQ, and back.
+
 
 A lot of the time, this works pretty transparently and doesn't need much thought: for example, a Python integer object ``123456`` is easy to pickle into something that comes out the other end as an equivalent object.
 
@@ -149,8 +150,6 @@ Some objects don't make sense to send to other places
 
 TODOs
 =====
-
-.. todo:: note that checkpointing results are stored using pickle - so this is not only about sending things across the wire (in space) but also to future runs of a checkpointed workflow (in time).
 
 .. seealso::
   I've talked about Pickle in more depth and outside of the Parsl context at PyCon Lithuania: `The Ghosts of Distant Objects <https://pycon.lt/2024/talks/YUXXZS>`_
