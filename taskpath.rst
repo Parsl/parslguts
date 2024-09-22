@@ -157,9 +157,7 @@ htex consists of a small part that runs in the user workflow process
 
 .. todo:: do I need to defined "user workflow process " earlier on in this chapter? it's somethat that should be defined and perhaps there should be a glossary or index for this document for terms like that?) and several other processes. 
 
-The first process in the interchange. This runs on the same host as the user workflow process and offloads task and result routing.
-
-.. todo:: link source code (interchange.py)
+The first process in the interchange, defined in `parsl/executors/high_throughput/interchange.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/interchange.py>`_. This runs on the same host as the user workflow process and offloads task and result queues.
 
 Beyond that, on each worker node on our HPC system, a copy of the process worker pool will be running. In this example workflow, our local system is the only worker node, so we should only expect to see one process worker pool, on the local system.
 
@@ -186,7 +184,7 @@ The interchange matches up tasks with available workers: it has a queue of tasks
 
 The matching process so far has been fairly arbitrary but we have been doing some research on better ways to match workers and tasks - I'll talk a little about that later `when talking about scaling in <blocks>`.
 
-so now, the interchange sends the task over one of those two zmq-over-TCP connections I talked about earlier... and we're now on the worker node where we're going to run the task.
+So now, the interchange sends the task over one of those two ZMQ-over-TCP connections I talked about earlier - and now the task is on the worker node where it will be run.
 
 .. index:: worker pool, pilot jobs
            High Throughput Executor; process worker pool
@@ -194,15 +192,17 @@ so now, the interchange sends the task over one of those two zmq-over-TCP connec
 The Process Worker Pool
 =======================
 
-Generally, a copy of the process worker pool runs on each worker node. (other configurations are possible) and consists of a few closely linked processes:
+The process worker pool is defined in `parsl/executors/high_throughput/process_worker_pool.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/process_worker_pool.py>`_.
 
-the manager process which interfaces to the interchange (this is why you'll see a jumble of references to managers or worker pools in the code: the manager is the externally facing interface to the worker pool)
+Usually, one copy of the process worker pool runs on each worker node, although other configurations are possible. It consists of a few closely linked processes:
 
-worker processes - each worker process is a worker. there are a bunch of configuration parameters and algorithms to decide how many workers to run - this happens near the start of the process worker pool process in the manager code.
+* The manager process which interfaces to the interchange (this is why you'll see a jumble of references to managers or worker pools in the code: the manager is the externally facing interface to the worker pool)
+
+* Several worker processes - each worker process is a worker. There are a bunch of configuration parameters and algorithms to decide how many workers to run - this happens near the start of the process worker pool process in the manager code. There is one worker per simultaneous task, so usually one per core or one per node (depending on application preference).
 
 .. todo:: link to worker pool code that calculates number of workers
 
-the task arrives at the manager, and the manager dispatches it to a free worker. it is possible there isnt' a free worker, becuase of the preloading feature for high throughput - and the task will have to wait in another queue here - but that is a rarely used feature.
+The task arrives at the manager, and the manager dispatches it to a free worker. it is possible there isnt' a free worker, becuase of the preloading feature for high throughput - and the task will have to wait in another queue here - but that is a rarely used feature.
 
 .. todo:: link to docstring of preload parameter
 
