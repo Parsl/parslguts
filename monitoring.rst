@@ -85,13 +85,34 @@ I'm not going to go further into ``parsl-visualize`` but you can run your own wo
 .. index:: pandas
            monitoring; pandas
            library; pandas
+           data frame
 
 Using data frames
 -----------------
 
 A different approach preferred by many data-literate users is to treat monitoring data like any other Python data, using Pandas.
 
-.. todo:: one example of non-plot (count tasks?)
+This example loads the entire task table (for all known workflows) into a data frame and then extracts the task completion times using Pandas notation:
+
+.. code-block:: python
+
+  import pandas as pd
+  import sqlite3
+
+  c = sqlite3.connect("runinfo/monitoring.db")
+  df = pd.read_sql_query("SELECT * FROM task", c)
+  c.close()
+
+  print(df['task_time_returned'])
+
+
+.. code-block::
+
+  $ python3 panda_mon.py 
+  0    2024-09-22 17:44:52.947501
+  1    2024-09-22 17:44:53.005619
+  Name: task_time_returned, dtype: object
+
 
 .. todo:: one example of plotting
 
