@@ -143,7 +143,7 @@ dflow.py, where the data flow kernel lives, is the longest source file in the Pa
 
 This is a callback driven state machine, which can be a bit hard to follow, especially when taking into account the various elaborations that happen.
 
-I will dig more into the ``Data Flow Kernel`` source code in the later chapter on task elaboration.
+I will dig more into the Data Flow Kernel source code in ``taskpath``.
 
 .. index:: Globus Compute
 
