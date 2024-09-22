@@ -127,17 +127,16 @@ From the many fields in ``TaskRecord``, what we need for now are fields for the 
 
 Then asynchronously:
 
-* perform elaborations on the task - things like waiting for dependencies, doing file staging, looking at checkpoints. I'll cover this more `in the Elaborations chapter <elaborating>`.
+* Perform elaborations on the task - things like waiting for dependencies, doing file staging, looking at checkpoints. I'll cover this more `in the Elaborations chapter <elaborating>`.
 
-* send the task to an Executor (TODO:hyperlink class docstring). in this case we aren't specifying multiple executors, so the task will go to the default single executor which is an instance of the High Throughput Executor (TODO: hyperlink class docstring) - which generates an executor level future
+* Submit the task to an executor. In this example, the configuration didn't specify multiple executors, so the task will go to the single executor that was specified: an instance of the High Throughput Executor. This submit call generates an executor level future. Distinct from the ``AppFuture`` above, this executor level future is used by the Data Flow Kernel as part of task management.
 
-  .. todo:: hyperlink class docstring
 
-* wait for completion of execution (success or failure) signlled via the executor level future
-* a bit more post-execution elaboration
-* set the AppFuture result
+* Wait for completion of execution (success or failure) signlled via the executor level future
+* Do a bit more post-execution elaboration
+* Set the AppFuture result
 
-dflow.py, where the data flow kernel lives, is the longest source file in the Parsl codebase, but most of what it does will be covered later on. For this example workflow, pretty much it sends the task straight on to the configured HighThroughputExecutor.
+`parsl/dataflow/dflow.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py>`_, where the Data Flow Kernel lives, is the longest source file in the Parsl codebase. Most of what it does will be covered later on. For this example workflow, it mostly sends the task straight on to the configured HighThroughputExecutor without doing too much else.
 
 This is a callback driven state machine, which can be a bit hard to follow, especially when taking into account the various elaborations that happen.
 
