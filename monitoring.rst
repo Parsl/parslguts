@@ -123,9 +123,7 @@ What is stored in the database?
 
 .. todo:: deeper dive into workflow/tasks/try table schema - not trying to be comprehensive of all schemas here but those three are a good set to deal with
 
-The monitoring database SQL schema is defined using SQLAlchemy's ORM model at:
-
-https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/monitoring/db_manager.py#L132
+The monitoring database SQL schema is defined using SQLAlchemy's object-relational model at `parsl/monitoring/db_manager.py line 132 onwards <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/monitoring/db_manager.py#L132>`_.
 
 .. warning:: The schema is defined a second time in `parsl/monitoring/visualization/models.py line 12 onwards <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/monitoring/visualization/models.py#L12>`_. See `issue #2266 <https://github.com/Parsl/parsl/issues/2266>`_ for more discussion.
 
