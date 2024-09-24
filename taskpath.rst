@@ -23,11 +23,11 @@ Here's a simple workflow that you can run on a single computer. I'll point out a
   with parsl.load(fresh_config()):
     print(add(5,3).result())
 
-This is nothing fancy: there's a config in my preferred style, with almost every parameter getting a suitable default value. All that is changed is to use the High Throughput Executor, rather than the default (and boring) Thread Pool Executor.
+This is nothing fancy: there's a config in my preferred style, with almost every parameter using a default value. All that is explicit is to use the High Throughput Executor, rather than the default (and boring) Thread Pool Executor.
 
-I'm going to ignore quite a lot, though: the startup/shutdown process (what happens with parsl.load() and what happens at the end of the ``with`` block); I'm going to defer batch system interactions to the `blocks chapter <blocks>`, and this example avoids many of Parsl's workflow features which I will cover in the `task elaboration chapter <elaborating>`.
+I'm going to ignore quite a lot: what happens with parsl.load() and what happens at shutdown; I'm going to defer batch system interactions to the `blocks chapter <blocks>`, and this example avoids many of Parsl's workflow features which I will cover in the `task elaboration chapter <elaborating>`.
 
-I'm going to call the Unix/Python process where this code runs, the user workflow process. There will be quite a lot of other processes involved, which I will cover as needed.
+I'm going to call the Unix/Python process where this code runs, the :dfn:`user workflow process`. There will be quite a lot of other processes involved, which I will cover as needed.
 
 .. index:: python_app, Python apps, decorators, apps; python
 
@@ -40,11 +40,9 @@ Defining a ``python_app``
   def add(x: int, y: int) -> int:
     return x+y
 
-Normally ``def`` defines a function (or a method) in Python. With the ``python_app`` decorator (defined at `parsl/app/app.py line 108 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/app.py#L108>`_), Parsl gets to change that into something different: this now defines a "Python app" which mostly looks like a function but with fancy Parsl bits added. The relevant fancy bit for this example is that instead of returning an ``int`` when invoked, ``add`` will instead return a ``Future[int]`` that will some time later get the result of the underlying function.
+Normally ``def`` defines a function (or a method) in Python. With the ``python_app`` decorator (defined at `parsl/app/app.py line 108 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/app.py#L108>`_), Parsl makes ``def`` mean something else: this now defines a :dfn:`Python app` which mostly looks like a function but with fancy Parsl things added. The relevant fancy thing for this example is that ``add`` will return a ``Future[int]``, a ``Future`` that will eventually get an ``int`` inside it, instead of directly returning an int.
 
-What happens when making this definition is that Python *does* make a regular function, but instead of binding the name ``add`` to that function, instead the function body is passed to a decorating function ``parsl.python_app`` and whatever comes out of that is bound to the name ``add``. A decorating function is allowed to do pretty much anything: python_app replaces the function definition with a new ``PythonApp`` object.
-
-You can also view what happens here as equivalent to this:
+This decorator syntax is roughly equivalent to writing this. The example script should behave the same if you substitute this code for the above definition:
 
 .. code-block:: python
 
@@ -53,6 +51,15 @@ You can also view what happens here as equivalent to this:
 
   add = parsl.python_app(add)
 
+What happens is first a regular function called ``add`` is defined, so the top level Python symbol ``add`` refers initially to that function.
+
+Then the ``add`` symbol is redefined, to be the output of calling ``parsl.python_app`` with the original ``add`` definition as an argument.
+
+``parsl.python_app`` is just a regular function. It's allowed to do anything it wants. At the end, ``add`` will end up as whatever that function returns.
+
+What it actually does is replace ``add`` with a ``PythonApp`` object that wraps the original ``app`` function. In the next section, I'll dig into that ``PythonApp`` object a bit more.
+
+Looking at types:
 
 A normal function in Python has this type:
 
@@ -65,7 +72,7 @@ A normal function in Python has this type:
   <class 'function'>
 
 
-but our just defined Python app looks like this:
+but ``add`` looks like this:
 
 .. code-block:: python
 
@@ -73,6 +80,7 @@ but our just defined Python app looks like this:
   <class 'parsl.app.python.PythonApp'>
 
 .. seealso::
+
      You can read more about decorators in the `Python glossary <https://docs.python.org/3/glossary.html#term-decorator>`_.
 
 Invoking a ``python_app``
