@@ -5,9 +5,9 @@ Blocks
 
 In the task overview, I assumed that process worker pools magically existed in the right place: on the local machine with the example configuration, but on HPC worker nodes when running a more serious workflow.
 
-The theme of this section is: how to get process worker pools running on the nodes where we want to do the work.
+The theme of this section is: how to get those process worker pools running on the nodes where we want to do the work.
 
-The configuration mechanisms talked about here are usually the most non-portable pieces of a Parsl workflow, because they are closely tied to the behaviour of particular HPC machines: this part of the configuration describes what an HPC machine looks like (as much as Parsl needs to know) and so the descriptions will be different for different machines. And so it's one of the most useful areas for admins and users to contribute documentation: for example, the Parsl user guide has a section with configurations for different machines, and ALCF and NERSC both maintain their own Parsl examples.
+The configurations for blocks are usually the most non-portable pieces of a Parsl workflow, because they are closely tied to the behaviour of particular HPC machines: this part of the configuration describes what an HPC machine looks like (at least, as much as Parsl needs to know) and so the descriptions will be different for different machines. (So it's one of the most useful areas for admins and users to contribute documentation: for example, the Parsl user guide has a section with configurations for different machines, and ALCF and NERSC both maintain their own Parsl examples).
 
 .. index:: pilot jobs
 

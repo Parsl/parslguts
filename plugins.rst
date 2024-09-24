@@ -140,4 +140,6 @@ All the plugin points I can think of
 
 * serialization - although as hinted at in `pickle`, Pickle is also extensible and that is usually the place to plug in hooks.
 
+  .. todo:: link to serialization interface, and to pickle documentation for pickle extensibility 
 
+* High Throughput Executor interchange manager selectors - https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/manager_selector.py - this is the beginning of a plugin interface to choose how tasks and worker pools are matched together in the interchange.
