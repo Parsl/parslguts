@@ -128,7 +128,7 @@ The Data Flow Kernel
 
 The code above called the ``submit`` method on a :dfn:`Data Flow Kernel` (DFK), the core object that manages a live workflow. That call created a :dfn:`task` inside the DFK. Every app invocation is paired with a task inside the DFK, and the terminology will use those terms fairly interchangeably. There is also usually only one of these DFK objects around at any time, and so often I'll talk about *the* DFK, not *a* DFK.
 
-The DFK follows the `God-object antipattern <https://en.wikipedia.org/wiki/God_object>`_ and is a repository for quite a lot of different pieces of functionality in addition to task handling. For example, it is the class which handles start up and shutdown of all the other pieces of Parsl (including block scaling, executors, monitoring, usage tracking and checkpointing). I'm not going to cover any of that here, but be aware when you look through the code that you will see all of that in addition to task handling.
+The DFK follows the `God-object antipattern <https://en.wikipedia.org/wiki/God_object>`_ and is a repository for quite a lot of different pieces of functionality in addition to task handling. For example, it is the class which handles start up and shutdown of all the other pieces of Parsl (including block scaling, executors, monitoring, usage tracking and checkpointing). I'm not going to cover any of that here, but be aware when you look through the code that you will see all of that in addition to task handling (it's the longest file in the codebase).
 
 Inside ``dfk.submit`` (in `parsl/dataflow/dflow.py around line 963 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L963>`_) two data structures are created: an ``AppFuture`` and a ``TaskRecord``.
 
@@ -138,29 +138,31 @@ The ``TaskRecord`` (defined in `parsl/dataflow/taskrecord.py <https://github.com
 
 From the many fields in ``TaskRecord``, what we need for now are fields for the app function, positional and keyword arguments to be able to invoke the app code, and a reference to the ``AppFuture`` to communicate the result afterwards.
 
-.. todo:: continue from here
+Most of what happens next is task management that I will cover in `elaborating` - things like waiting for dependencies, file staging, checkpointing. In this example, none of that happens and the DFK will go straight to submitting the task to the High Throughput Executor, giving a second future for the task, the :dfn:`executor future`.
 
-Then asynchronously:
+The DFK will use this execuctor future to do more task management when the executor finishes executing the task.
 
-* Perform elaborations on the task - things like waiting for dependencies, doing file staging, looking at checkpoints. I'll cover this more `in the Elaborations chapter <elaborating>`.
+I'll dig into DFK much more in `elaborating` - for now, I'll just show that the code makes a submit call to the chosen executor (on `line 761 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L761>`_):
 
-* Submit the task to an executor. In this example, the configuration didn't specify multiple executors, so the task will go to the single executor that was specified: an instance of the High Throughput Executor. This submit call generates an executor level future. Distinct from the ``AppFuture`` above, this executor level future is used by the Data Flow Kernel as part of task management.
+.. code-block:: python
+  :lineno-start: 760
 
+  with self.submitter_lock:
+    exec_fu = executor.submit(function, task_record['resource_specification'], *args, **kwargs)
 
-* Wait for completion of execution (success or failure) signlled via the executor level future
-* Do a bit more post-execution elaboration
-* Set the AppFuture result
+and then adds a callback onto the executor future to run when the task completes (at `line 701 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L701>`_):
 
-`parsl/dataflow/dflow.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py>`_, where the Data Flow Kernel lives, is the longest source file in the Parsl codebase. Most of what it does will be covered later on. For this example workflow, it mostly sends the task straight on to the configured HighThroughputExecutor without doing too much else.
+.. code-block:: python
+  :lineno-start: 701
 
-This is a callback driven state machine, which can be a bit hard to follow, especially when taking into account the various elaborations that happen.
+  exec_fu.add_done_callback(partial(self.handle_exec_update, task_record))
 
-I will dig more into the Data Flow Kernel source code in ``taskpath``.
+That callback will fire later as the result comes back. This style of callback is used in a few places to drive state changes asynchronously.
 
 .. index:: Globus Compute
 
-HighThroughputExecutor.submit
-=============================
+HighThroughputExecutor.submit()
+===============================
 
 Now lets dig into the high throughput executor. the dataflow kernel hands over control to whichever executor the user configured (the other options are commonly the thread pool executor (link) and work queue (link) although there are a few others included). but for this example we're going to concentrate on the high throughput executor. If you're a Globus Compute fan, this is the layer at which the Globus Compute endpoint attaches to the guts of parsl - so everything before this isn't relevant for Globus Compute, but this bit about the high throughput executor is.
 
