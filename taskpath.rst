@@ -86,31 +86,34 @@ but ``add`` looks like this:
 Invoking a ``python_app``
 =========================
 
-If ``add`` isn't a function, what does this code invoke?
+If ``add`` isn't a function, what does this code (that looks like a function invocation) mean?
 
 .. code-block:: python
 
   add(5,3)
 
-Any class can be used with function call syntax, if it implements the ``__call__`` magic method. Here is the ``PythonApp`` implementation, in `parsl/app/python.py, line 50 onwards <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/python.py#L50>`_:
+In Python, any class can be used with function call syntax, if it has a ``__call__`` magic method. Here is the ``PythonApp`` implementation, in `parsl/app/python.py, line 50 onwards <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/app/python.py#L50>`_:
 
 .. code-block:: python
+  :lineno-start: 50    
 
-    def __call__(self, *args, **kwargs):
+  def __call__(self, *args, **kwargs):
 
-      # ...
+  # ...
 
-      app_fut = dfk.submit(func, app_args=args,
-                           executors=self.executors,
-                           cache=self.cache,
-                           ignore_for_cache=self.ignore_for_cache,
-                           app_kwargs=invocation_kwargs,
-                           join=self.join)
+.. code-block:: python
+  :lineno-start: 77
 
-      return app_fut
+    app_fut = dfk.submit(func, app_args=args,
+                         executors=self.executors,
+                         cache=self.cache,
+                         ignore_for_cache=self.ignore_for_cache,
+                         app_kwargs=invocation_kwargs,
+                         join=self.join)
 
+    return app_fut
 
-The ``PythonApp`` implementation of ``__call__`` doesn't do too much: it massages arguments a bit but ultimately delegates all the work to the next component along, the Data Flow Kernel referenced by the ``dfk`` variable. ``dfk.submit`` returns immediately, without executing anything. It returns a ``Future`` which will eventually get the final task result, and ``PythonApp`` returns that ``Future`` to its own caller.
+The ``PythonApp`` implementation of ``__call__`` doesn't do too much: it massages arguments a bit but delegates all the work to the next component along, the Data Flow Kernel referenced by the ``dfk`` variable. ``dfk.submit`` returns immediately, without executing anything. It returns an ``AppFuture`` which will eventually get the final task result, and ``PythonApp`` returns that to its own caller. This is the future that a user sees when they invoke an app.
 
 The most important parameters to see are the function to execute, stored in ``func`` and the arguments in ``app_args`` (a list of positional arguments) and ``app_kwargs`` (a ``dict`` of keyword arguments). Those three things are what we will need later on to invoke our function somewhere else, and a lot of the rest of task flow is about moving these around and sometimes changing them.
 
@@ -123,13 +126,13 @@ The most important parameters to see are the function to execute, stored in ``fu
 The Data Flow Kernel
 ====================
 
-The code above called the ``submit`` method on a Data Flow Kernel (DFK), the core object for a workflow. That call created a task inside the DFK. Every app invocation is paired with a task inside the DFK, and the terminology will use those terms fairly interchangeably.
+The code above called the ``submit`` method on a :dfn:`Data Flow Kernel` (DFK), the core object that manages a live workflow. That call created a :dfn:`task` inside the DFK. Every app invocation is paired with a task inside the DFK, and the terminology will use those terms fairly interchangeably. There is also usually only one of these DFK objects around at any time, and so often I'll talk about *the* DFK, not *a* DFK.
 
 The DFK follows the `God-object antipattern <https://en.wikipedia.org/wiki/God_object>`_ and is a repository for quite a lot of different pieces of functionality in addition to task handling. For example, it is the class which handles start up and shutdown of all the other pieces of Parsl (including block scaling, executors, monitoring, usage tracking and checkpointing). I'm not going to cover any of that here, but be aware when you look through the code that you will see all of that in addition to task handling.
 
 Inside ``dfk.submit`` (in `parsl/dataflow/dflow.py around line 963 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L963>`_) two data structures are created: a ``TaskRecord`` and an ``AppFuture``.
 
-An ``AppFuture`` is a very thin layer around Python's `concurrent.futures.Future class <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future>`_. This is returned from the ``submit`` method immediately, and is what will be used to communicate task completion to the submitting user later on.
+The ``AppFuture`` is the future that the user will get back from app invocation, almost definitely without a result in it yet. It is a thin layer around Python's built-in `concurrent.futures.Future class <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future>`_. This is returned from the ``submit`` method and onwards back to the user immediately. Later on in execution, this is how task completion will be communicated to the submitting user.
 
 The ``TaskRecord`` (defined in `parsl/dataflow/taskrecord.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/taskrecord.py>`_) contains most of the state for a task.
 
