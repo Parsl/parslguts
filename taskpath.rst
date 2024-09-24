@@ -130,13 +130,13 @@ The code above called the ``submit`` method on a :dfn:`Data Flow Kernel` (DFK), 
 
 The DFK follows the `God-object antipattern <https://en.wikipedia.org/wiki/God_object>`_ and is a repository for quite a lot of different pieces of functionality in addition to task handling. For example, it is the class which handles start up and shutdown of all the other pieces of Parsl (including block scaling, executors, monitoring, usage tracking and checkpointing). I'm not going to cover any of that here, but be aware when you look through the code that you will see all of that in addition to task handling.
 
-Inside ``dfk.submit`` (in `parsl/dataflow/dflow.py around line 963 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L963>`_) two data structures are created: a ``TaskRecord`` and an ``AppFuture``.
+Inside ``dfk.submit`` (in `parsl/dataflow/dflow.py around line 963 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/dflow.py#L963>`_) two data structures are created: an ``AppFuture`` and a ``TaskRecord``.
 
 The ``AppFuture`` is the future that the user will get back from app invocation, almost definitely without a result in it yet. It is a thin layer around Python's built-in `concurrent.futures.Future class <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future>`_. This is returned from the ``submit`` method and onwards back to the user immediately. Later on in execution, this is how task completion will be communicated to the submitting user.
 
 The ``TaskRecord`` (defined in `parsl/dataflow/taskrecord.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/dataflow/taskrecord.py>`_) contains most of the state for a task.
 
-From the many fields in ``TaskRecord``, what we need for now are fields for the function to run, positional and keyword arguments and a reference to the ``AppFuture`` so it can have a result set later.
+From the many fields in ``TaskRecord``, what we need for now are fields for the app function, positional and keyword arguments to be able to invoke the app code, and a reference to the ``AppFuture`` to communicate the result afterwards.
 
 .. todo:: continue from here
 
