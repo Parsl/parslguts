@@ -159,47 +159,67 @@ and then adds a callback onto the executor future to run when the task completes
 
 That callback will fire later as the result comes back. This style of callback is used in a few places to drive state changes asynchronously.
 
-.. index:: Globus Compute
+.. index:: Globus Compute, ZMQ, ZeroMQ
 
 HighThroughputExecutor.submit()
 ===============================
 
-Now lets dig into the high throughput executor. the dataflow kernel hands over control to whichever executor the user configured (the other options are commonly the thread pool executor (link) and work queue (link) although there are a few others included). but for this example we're going to concentrate on the high throughput executor. If you're a Globus Compute fan, this is the layer at which the Globus Compute endpoint attaches to the guts of parsl - so everything before this isn't relevant for Globus Compute, but this bit about the high throughput executor is.
+``executor.submit()`` above will send the task to the executor I configured, which is an instance of the High ThroughputExecutor. This is the point at which the task would instead go to Work Queue or one of the other executors, if the configuration was different. I'll cover plugin points like this in more depth in `plugins`.
 
-The data flow kernel will have performed some initialization on the high throughput executor when it started up, in addition to the user-specified configuration at construction time. for now, I'm going to assume that all the parts of the high throughput executor have started up correctly.
+The High Throughput Executor consists of a bunch of threads and processes distributed across the various nodes you want to execute tasks on.
 
-.. todo:: perhaps this initialization code is in enough of one place to link to in the DFK code?
+Inside the user workflow process, the ``submit`` method packages the task up for execution and sends it on to the :dfn:`interchange` process.
 
-The High Throughput Executor consists of a small part that runs in the user workflow process and then quite a lot of other processes.
+Inside the user workflow process, the High Throughput Executor ``submit`` method (`parsl/executors/high_throughput/executor.py, line 632 onwards <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/executor.py#L634>`_) packages the task up for execution and sends it on to the :dfn:`interchange` process:
 
-The first process in the interchange, defined in `parsl/executors/high_throughput/interchange.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/interchange.py>`_. This runs on the same host as the user workflow process and offloads task and result queues.
+.. code-block:: python
+   :lineno-start: 666
 
-Beyond that, on each worker node on our HPC system, a copy of the process worker pool will be running. In this example workflow, our local system is the only worker node, so we should only expect to see one process worker pool, on the local system.
+        fut = Future()
+        fut.parsl_executor_task_id = task_id
+        self.tasks[task_id] = fut
 
-.. index:: ZMQ
+        try:
+            fn_buf = pack_res_spec_apply_message(func, args, kwargs,
+                                                 resource_specification=resource_specification,
+                                                 buffer_threshold=1024 * 1024)
+        except TypeError:
+            raise SerializationError(func.__name__)
 
-These worker pools connect back to the interchange using two network connections (ZMQ over TCP) - so on the interchange process you'll need 2 fds per node - this is a common limitation to "number of nodes" scalability of Parsl. (see `issue #3022 <https://github.com/Parsl/parsl/issues/3022>`_ for a proposal to use one network connection per worker pool)
+        msg = {"task_id": task_id, "buffer": fn_buf}
 
-so inside htex.submit:
-we're going to:
+        # Post task to the outgoing queue
+        self.outgoing_q.put(msg)
 
-* serialize the details of the function invocation (the function, the positional args and the keyword args) into a sequence of bytes. `Later, I'll talk about this in much more depth <pickle>`.
+        # Return the future
+        return fut
 
-* send that byte sequence to the interchange over ZMQ
+The steps here are: 
 
-* create and return an executor future back to the invoking DFK - this is how we're going to signal to the DFK that the task is completed (with a result or failure) so it is part of the propagation route of results all the way back to the user.
+* make the executor future
+* map it to the task ID so results handling can find it later
+* serialize the task definition (that same triple of function, args, keyword args, along with any resource specification) into a byte stream ``fn_buf`` that is easier to send over the network (see `pickle` later)
+* construct a message for the interchange pairing the task ID with that byte stream sequence
+* send that message on the outgoing queue to the interchange
+* return the (empty) executor future back to the DFK
+
+Another piece of code will handle getting results back into that executor future later on.
+
+All of the different processes involved in the High Throughput Executor communicate using `ZeroMQ <https://zeromq.org/>`_ (ZMQ). I won't talk about that in much depth, but it's a messaging layer that (in High Throughput Executor) delivers messages over TCP/IP. The ``outgoing_q`` above is a ZMQ queue for submitting tasks to the interchange.
 
 .. index:: interchange
-           High Throughput Executor; interchange
- 
+          High Throughput Executor; interchange
+
 The Interchange
 ===============
 
-The interchange matches up tasks with available workers: it has a queue of tasks, and it has a queue of process worker pool managers which are ready for work. so whenever a new task arrives from the user workflow process, or when a manager is ready for work, a match is made. there won't always be available work or available workers so there are queues in the interchange.
+The interchange (defined in `parsl/executors/high_throughput/interchange.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/interchange.py>`_) runs alongside the user workflow process on the submitting node. It matches up tasks with available workers: it has a queue of tasks, and it has a queue of process worker pool managers which are ready for work. 
+
+Whenever it can match a new task (arriving on the outgoing task queue) with a process worker pool that is ready for work, it will send the task onwards to that worker pool. Otherwise, a queue of either ready tasks or ready workers builds up in the interchange.
 
 The matching process so far has been fairly arbitrary but we have been doing some research on better ways to match workers and tasks - I'll talk a little about that later `when talking about scaling in <blocks>`.
 
-So now, the interchange sends the task over one of those two ZMQ-over-TCP connections I talked about earlier - and now the task is on the worker node where it will be run.
+The interchange has two ZMQ connections per worker pool (one for sending tasks, one for receiving results) and when this task is matched, the definition will be sent onwards via the relevant per-pool connection.
 
 .. index:: worker pool, pilot jobs
            High Throughput Executor; process worker pool
@@ -207,33 +227,42 @@ So now, the interchange sends the task over one of those two ZMQ-over-TCP connec
 The Process Worker Pool
 =======================
 
-The process worker pool is defined in `parsl/executors/high_throughput/process_worker_pool.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/process_worker_pool.py>`_.
+On each worker node on our HPC system, a copy of the process worker pool will be running - `blocks` will talk about how that comes about. In this example workflow, the local system is the only worker node, so there will only be one worker pool. But in a 1000-node run, there would usually be 1000 worker pools, one running on each of those nodes (although other configurations are possible).
 
-Usually, one copy of the process worker pool runs on each worker node, although other configurations are possible. It consists of a few closely linked processes:
+These worker pools connect back to the interchange using two network connections each (ZMQ over TCP) - so on the interchange process you'll need 2 fds per node. This is a common limitation to "number of nodes" scalability of Parsl. (see `issue #3022 <https://github.com/Parsl/parsl/issues/3022>`_ for a proposal to use one network connection per worker pool)
+
+The source code for the process worker pool livces in `parsl/executors/high_throughput/process_worker_pool.py <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/process_worker_pool.py>`_.
+
+The worker pool consists of a few closely linked processes:
 
 * The manager process which interfaces to the interchange (this is why you'll see a jumble of references to managers or worker pools in the code: the manager is the externally facing interface to the worker pool)
 
 * Several worker processes - each worker process is a worker. There are a bunch of configuration parameters and heuristics to decide how many workers to run - this happens near the start of the process worker pool process at `parsl/executors/high_throughput/process_worker_pool.py line 210 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/process_worker_pool.py#L210>`_. There is one worker per simultaneous task, so usually one per core or one per node (depending on application preference).
 
-The task arrives at the manager, and the manager dispatches it to a free worker. It is possible there isn't a free worker, becuase of the `pre-fetch feature <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/executor.py#L113>`_ which can help in high throughput situations. The task will have to wait in another queue here - ready to start execution when a worker becomes free, without any more network activity.
+The task arrives at the manager, and the manager dispatches it to a free worker. It is possible there isn't a free worker, becuase of the `pre-fetch feature <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/executor.py#L113>`_ which can help in high throughput situations. In that case, the task will have to wait in another queue - ready to start execution when a worker becomes free, without any more network activity.
 
-the worker then deserialises the byte package that was originally serialized all the way back in the user submit process: we've got python objects for the function to run, the positional arguments and the keyword arguments.
+The worker then deserialises the byte package that was originally serialized all the way back in the user submit process, giving python objects for the function to run, the positional arguments and the keyword arguments.
 
-so at this point, we invoke the function with those arguments (link to the ``f(*args, **kwargs)`` line)
+At this point, the worker process can invoke the function with those arguments: the worker pool's ``execute_task`` method handles that at `line 593 <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/process_worker_pool.py#L593>`_
 
-and the user code runs! almost, but not quite, as if all of that hadn't happened and we'd just invoked the underlying function without Parsl.
+Now the original function has run! but in a worker that could have been on a different node.
 
-it's probably going to end in two ways: a result or an exception
-(actually there is a common third way, which is that it kills the unix-level worker process for example by using far too much memory or by a library segfault - or by the batch job containing the worker pool reaching the end of its run time - that is handled, but I'm ignoring that here)
+The function execution is probably going to end in two ways: a result or an exception (actually there is a common third way, which is that it kills the unix-level worker process for example by using far too much memory or by a library segfault - or by the batch job containing the worker pool reaching the end of its run time - that is handled, but I'm ignoring that here)
 
-now we've got the task outcome - either a Python object that is the result, or a Python object that is the exception. We pickle that object and send it back to the manager, then to the interchange (over the *other* ZMQ-over-TCP socket) and then to the high throughput executor submit-side in the user workflow process.
+This result needs to be set on the ``AppFuture`` back in the user workflow process. It flows back over network connections that parallel the submitting side: first back to the interchange, and then to piece of the High Throughput Executor running inside the submit process.
 
-Back on the submit side, there's a high throughput executor process running listening on that socket. It gets the result package and sets the result into the executor future. That is the mechanism by which the DFK sees that the executor has finished its work, and so that's where the final bit of "task elaboration" happens - the big elaboration here would be retries on failure, which is basically do that whole HTEX submission again and get a new executor future for the next try. (but other less common elaborations would be storing checkpointing info for this task, and file staging)
+This final part of the High Throughput Executor is less symmetrical: the user workflow script is not necessarily waiting for any results at this point, so the High Throughput Executor runs a second thread to process results, the :dfn:`result queue thread` implemented by `htex._result_queue_worker <https://github.com/Parsl/parsl/blob/3f2bf1865eea16cc44d6b7f8938a1ae1781c61fd/parsl/executors/high_throughput/executor.py#L438>`_. This listens for new results and sets the corresponding executor future.
 
-.. todo:: code reference to deserializing and setting executor future result
+Once the executor future is set, that causes the ``handle_exec_done`` callback in the Data Flow Kernel to run. Some interesting task handling might happen here (see `elaborating` - things like retry handling) but in this example, nothing interesting happens and the DFK sets the ``AppFuture`` result.
 
-When that elaboration is finished (and didn't do a retry), we can set that same result value into the AppFuture which all that long time ago was given to the user. And so now future.result() returns that results (or raises that exception), back in the user workflow, and the user can see the result.
+Setting the ``AppFuture`` result wakes up the main thread which is sitting blocked in the ``.result()`` part of final bit of the workflow:
 
-So now we're at the end of our simple workflow, and we pass out of the parsl context manager. that causes parsl to do various bits of shutdown. and then the user workflow process falls of the bottom and ends.
+.. code-block:: python
+
+    print(add(5,3).result())
+
+... and the result can be printed.
+
+So now we're at the end of our simple workflow, and we pass out of the parsl context manager. That causes parsl to do various bits of shutdown. and then the user workflow process falls of the bottom and the process ends.
 
 .. todo:: label the various TaskRecord state transitions (there are only a few relevant here) throughout this doc - it will play nicely with the monitoring DB chapter later, to they are reflected not only in the log but also in the monitoring database.
